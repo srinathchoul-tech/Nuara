@@ -18,6 +18,7 @@ def init_db():
     cursor.execute("DROP TABLE IF EXISTS edges")
     cursor.execute("DROP TABLE IF EXISTS audit_logs")
     cursor.execute("DROP TABLE IF EXISTS agent_steps")
+    cursor.execute("DROP TABLE IF EXISTS onboarding_chats")
     
     cursor.execute("""
     CREATE TABLE users (
@@ -74,6 +75,15 @@ def init_db():
         role TEXT,
         status TEXT,
         duration_ms INTEGER,
+        message TEXT
+    )
+    """)
+    
+    cursor.execute("""
+    CREATE TABLE onboarding_chats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        sender TEXT,
         message TEXT
     )
     """)

@@ -258,10 +258,25 @@ function App() {
     }
   };
 
+  const fetchOnboardingChats = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/onboarding/chats`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setCopilotMessages(data);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchSession();
     fetchLogs();
     fetchAdminData();
+    fetchOnboardingChats();
     const interval = setInterval(fetchLogs, 3000);
 
     const savedTheme = localStorage.getItem("theme") || "dark";

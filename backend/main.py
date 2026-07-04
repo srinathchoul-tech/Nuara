@@ -162,9 +162,53 @@ def query_app_documentation(query_text: str):
     scored_chunks = sorted(scored_chunks, key=lambda x: x[1], reverse=True)
     return [item[0] for item in scored_chunks]
 
+def save_onboarding_chat(sender: str, message: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    import datetime
+    timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+    try:
+        cursor.execute(
+            "INSERT INTO onboarding_chats (timestamp, sender, message) VALUES (?, ?, ?)",
+            (timestamp, sender, message)
+        )
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
 def generate_architect_response(query_text: str, context_chunks: list):
     query_lower = query_text.lower()
     
+    if any(k in query_lower for k in ["role", "roles", "user", "users", "switcher"]):
+        return (
+            "We have three registered roles in our system security model: Software Engineer (Standard_Eng), "
+            "HR Manager (HR_Manager), and Executive Director (Executive). These roles determine the clearance level "
+            "granted to the user session, and you can see them listed in the Role Switcher panel on the left sidebar."
+        )
+
+    if any(k in query_lower for k in ["clearance", "clearances", "access", "level", "levels", "authorized", "clearance_level"]):
+        return (
+            "Access clearances are divided into four hierarchical levels: PUBLIC, ENG, HR, and EXEC. "
+            "Standard Software Engineers have ENG clearance, HR Managers have HR clearance, and Executive Directors "
+            "have EXEC clearance. Clearance constraints are checked at query time to prevent unauthorized access."
+        )
+
+    if any(k in query_lower for k in ["document", "documents", "vault", "drive", "wiki", "ticket", "chat"]):
+        return (
+            "Our Data Source Vault organizes company records into Drives (containing PUBLIC resources), "
+            "Wikis (containing ENG level engineering specifications), Tickets (containing HR level salary resources), "
+            "and Chat Logs (containing EXEC level sensitive chat archives)."
+        )
+
+    if any(k in query_lower for k in ["reset", "lockdown", "alert", "dispatch", "breach", "enforcer"]):
+        return (
+            "When a user attempts to access a document that exceeds their clearance level, the system triggers a "
+            "security breach and enters lockdown mode. During a lockdown, query operations are suspended. "
+            "You can clear this state by clicking the reset button in the Compliance Enforcer panel."
+        )
+
     if any(k in query_lower for k in ["security", "permission", "leak", "acl", "clearance", "restrict"]):
         return (
             "As the Lead Technical Architect, I designed our security model around Permission-Integrated Intelligence. "
@@ -187,7 +231,7 @@ def generate_architect_response(query_text: str, context_chunks: list):
             "to the audit database and pushed directly to the UI logs terminal for real-time visibility."
         )
         
-    if any(k in query_lower for k in ["decision", "graph", "relational", "historical"]):
+    if any(k in query_lower for k in ["decision", "graph", "relational", "historical", "citation", "citation"]):
         return (
             "We've created an Org-Wide Decision Memory mapping layer using Neo4j. By representing concepts, files, "
             "and communication history as graph nodes and edges, we trace why key product decisions were made, "
@@ -195,11 +239,21 @@ def generate_architect_response(query_text: str, context_chunks: list):
         )
         
     if context_chunks:
-        summary = " ".join(context_chunks[:2])
-        return (
-            f"Regarding your query, here is how NexusBrain is designed: {summary} "
-            "Let me know if you would like me to dive deeper into any specific innovation or component of our architecture."
-        )
+        import re
+        cleaned_chunks = []
+        for chunk in context_chunks:
+            c = re.sub(r"#+\s*", "", chunk)
+            c = re.sub(r"\s+", " ", c).strip()
+            if c:
+                cleaned_chunks.append(c)
+        if cleaned_chunks:
+            summary = " ".join(cleaned_chunks[:2])
+            if len(summary) > 280:
+                summary = summary[:280] + "..."
+            return (
+                f"Regarding your query, here is how NexusBrain is designed: {summary} "
+                "Let me know if you would like me to dive deeper into any specific component of our architecture."
+            )
         
     return (
         "Hello! I am the Lead Technical Architect of NexusBrain. I can help explain our GraphRAG pipeline, "
@@ -210,7 +264,23 @@ def generate_architect_response(query_text: str, context_chunks: list):
 def onboarding_chat(req: OnboardingChatRequest):
     chunks = query_app_documentation(req.message)
     response_text = generate_architect_response(req.message, chunks)
+    save_onboarding_chat("user", req.message)
+    save_onboarding_chat("system", response_text)
     return {"response": response_text}
+
+@app.get("/api/onboarding/chats")
+def get_onboarding_chats():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT sender, message FROM onboarding_chats ORDER BY id ASC")
+        rows = cursor.fetchall()
+        chats = [{"sender": row[0], "text": row[1]} for row in rows]
+    except Exception:
+        chats = []
+    finally:
+        conn.close()
+    return chats
 
 
 if __name__ == "__main__":
