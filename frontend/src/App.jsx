@@ -114,7 +114,7 @@ function App() {
 
       <header className="bg-surface border-b border-outline-variant flex justify-between items-center px-panel-padding h-12 w-full z-50 shrink-0">
         <div className="flex items-center gap-4">
-          <span className="font-headline-md text-headline-md font-bold text-primary tracking-tighter uppercase leading-none">NexusBrain</span>
+          <span className="font-headline-md text-headline-md font-bold text-primary tracking-tighter uppercase leading-none">Nuara</span>
           {session.is_locked && (
             <>
               <div className="h-4 w-px bg-outline-variant mx-2"></div>
@@ -154,7 +154,7 @@ function App() {
       <main className="flex-1 flex overflow-hidden">
         <nav className="bg-surface-container-low border-r border-outline-variant w-64 flex flex-col h-full z-40 shrink-0">
           <div className="p-panel-padding border-b border-outline-variant">
-            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-1">NexusBrain Core</div>
+            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-1">Nuara Core</div>
             <div className={`font-mono-data text-mono-data ${session.is_locked ? "text-error" : "text-primary"}`}>
               {session.is_locked ? "Auth: INVALIDATED" : `Clearance: ${session.clearance}`}
             </div>

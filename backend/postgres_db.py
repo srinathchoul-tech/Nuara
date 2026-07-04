@@ -3,7 +3,7 @@ import psycopg2
 from datetime import datetime
 from backend.database import get_db_connection as get_sqlite_conn
 
-POSTGRES_URI = os.getenv("POSTGRES_URI", "postgresql://postgres:postgres@localhost:5432/nexusbrain")
+POSTGRES_URI = os.getenv("POSTGRES_URI", "postgresql://postgres:postgres@localhost:5432/nuara")
 
 def get_postgres_connection():
     try:

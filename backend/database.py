@@ -87,7 +87,7 @@ def init_db():
     
     cursor.executemany("INSERT INTO documents VALUES (?, ?, ?, ?, ?, ?)", [
         ("doc_q3", "Q3_Report.pdf", "The company achieved record growth in Q3. Enterprise knowledge graphs were adopted by 40% of target clients. Transition to hybrid semantic RAG model was successfully completed, reducing latency to under 2 seconds.", "Drive", "PUBLIC", "https://nexus.internal/docs/Q3_Report.pdf"),
-        ("doc_arch", "Architecture_v2.docx", "NexusBrain core architecture uses hybrid retrieval (BM25 + dense vector embeddings). Rerankers are utilized to improve synthesis. Pre-retrieval IAM filters ensure no unauthorized access to documents. Latency is kept low through caching.", "Drive", "ENG", "https://nexus.internal/docs/Architecture_v2.docx"),
+        ("doc_arch", "Architecture_v2.docx", "Nuara core architecture uses hybrid retrieval (BM25 + dense vector embeddings). Rerankers are utilized to improve synthesis. Pre-retrieval IAM filters ensure no unauthorized access to documents. Latency is kept low through caching.", "Drive", "ENG", "https://nexus.internal/docs/Architecture_v2.docx"),
         ("chat_slack_eng", "slack_#eng_leads", "Node_02: We finished testing the vector DB. RAG latency is 1.8s. CEO_Alpha: Great, verify that the permissions gateway is fully blocking non-authorized users. Standard_Eng: Yes, verified.", "Chat", "ENG", "https://nexus.internal/chat/slack_eng_leads"),
         ("doc_hr_salary", "HR_Salaries_FY24", "Executive bonus pool: CEO_Alpha - $250k, CTO_Beta - $180k. Software Engineer salaries range from $120k to $190k. Average bonus for L5 engineers is $15k. All database details are restricted to HR and Executive clearance.", "Tickets", "HR", "https://nexus.internal/hr/salary_sheet_fy24")
     ])
