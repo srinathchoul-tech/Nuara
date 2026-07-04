@@ -310,7 +310,7 @@ function App() {
   const getProfileBadgeColor = (clearance) => {
     if (clearance === "EXEC") return "bg-rose-500 text-white";
     if (clearance === "HR") return "bg-amber-500 text-white";
-    return "bg-blue-600 text-white";
+    return "bg-primary text-on-primary";
   };
 
   return (
@@ -598,7 +598,7 @@ function App() {
                   className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer active:scale-95 ${
                     session.is_locked 
                       ? "bg-red-500/20 text-red-400 cursor-not-allowed border border-red-500/30" 
-                      : "bg-primary text-on-primary hover:bg-blue-700 shadow-sm"
+                      : "bg-primary text-on-primary hover:opacity-90 shadow-sm"
                   }`}
                 >
                   {isLoading ? "RUNNING..." : "QUERY"}
@@ -741,7 +741,7 @@ function App() {
                     }`}
                   >
                     <span className="opacity-40 select-none whitespace-nowrap">{log.timestamp.split("T")[1]?.slice(0, 8) || log.timestamp}</span>
-                    <span className="text-blue-400/80">[{log.component}]</span>
+                    <span className="text-primary opacity-80">[{log.component}]</span>
                     <span>{log.msg}</span>
                   </div>
                 ))}
@@ -777,7 +777,7 @@ function App() {
                 </p>
                 <button 
                   onClick={() => switchUser("CEO_Alpha")}
-                  className="px-4 py-2 bg-primary text-on-primary font-label-md text-xs rounded-xl hover:bg-blue-700 transition-all cursor-pointer active:scale-95 w-full font-bold"
+                  className="px-4 py-2 bg-primary text-on-primary font-label-md text-xs rounded-xl hover:opacity-90 transition-all cursor-pointer active:scale-95 w-full font-bold"
                 >
                   REQUEST ELEVATION
                 </button>
@@ -941,7 +941,7 @@ function App() {
                     </div>
                     <button 
                       type="submit"
-                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg hover:bg-blue-700 transition-colors cursor-pointer active:scale-98 font-bold"
+                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg hover:opacity-90 transition-colors cursor-pointer active:scale-98 font-bold"
                     >
                       Seed to Vector & Graph Stores
                     </button>
