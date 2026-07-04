@@ -295,6 +295,583 @@ function App() {
     return "bg-primary text-on-primary";
   };
 
+  if (theme === "dark") {
+    return (
+      <div className="h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200">
+        {session.is_locked && <div className="crt-overlay"></div>}
+
+        <header className="bg-[var(--header-bg)] border-b border-outline px-6 h-14 w-full z-50 shrink-0 flex justify-between items-center text-[#dec9e9]">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+              className="text-[#dec9e9] hover:text-white hover:bg-surface-variant transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {isLeftSidebarOpen ? "menu_open" : "menu"}
+              </span>
+            </button>
+            <span className="font-headline-md text-headline-md font-bold text-white tracking-tighter uppercase leading-none">Nuara</span>
+            {session.is_locked && (
+              <>
+                <div className="h-4 w-px bg-outline mx-2"></div>
+                <span className="font-mono-data text-mono-data text-error uppercase tracking-widest flex items-center gap-1.5 text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+                  SYSTEM_LOCKDOWN_ACTIVE
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1 bg-background p-1 rounded border border-outline">
+              <button 
+                onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                className="text-[#dec9e9] hover:text-white hover:bg-surface transition-colors p-1.5 rounded flex items-center justify-center cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {isRightSidebarOpen ? "view_sidebar" : "splitscreen"}
+                </span>
+              </button>
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-[#dec9e9] hover:text-white hover:bg-surface transition-colors p-1.5 rounded flex items-center justify-center cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">security</span>
+              </button>
+              <button 
+                onClick={toggleTheme}
+                className="text-[#dec9e9] hover:text-white hover:bg-surface transition-colors p-1.5 rounded flex items-center justify-center cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">light_mode</span>
+              </button>
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-[#dec9e9] hover:text-white hover:bg-surface transition-colors p-1.5 rounded flex items-center justify-center cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">settings</span>
+              </button>
+            </div>
+            
+            <div className="h-6 w-px bg-outline"></div>
+
+            <div className="flex items-center gap-3">
+              <div className="text-right flex flex-col justify-center">
+                <span className="font-bold text-[12px] text-white leading-tight">Srinath Choul</span>
+                <div className="mt-0.5 flex justify-end">
+                  <span className="text-[8px] font-bold uppercase tracking-wider font-mono-data px-1.5 py-0.5 rounded border border-outline bg-surface-variant text-on-surface">
+                    Software Engineer
+                  </span>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary text-on-primary border border-outline">
+                <span className="material-symbols-outlined text-[16px]">engineering</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex overflow-hidden">
+          {isLeftSidebarOpen && (
+            <nav 
+              style={{ width: `${sidebarWidth}px` }} 
+              className="bg-surface border-r border-outline flex flex-col h-full z-40 shrink-0"
+            >
+              <div className="p-4 border-b border-outline">
+                <div className="text-[10px] font-bold text-white tracking-widest uppercase">Nuara Core</div>
+                <div className="text-[9px] text-on-surface font-mono-data mt-0.5">Clearance: {session.clearance}</div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="font-label-md text-label-md uppercase tracking-widest text-[#dec9e9] font-bold">Data Source Vault</div>
+                <ul className="space-y-1">
+                  <li className="flex flex-col">
+                    <div 
+                      onClick={() => toggleFolder("drives")}
+                      className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.drives ? "text-primary font-medium" : "text-on-surface"}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {expandedFolders.drives ? "folder_open" : "folder"}
+                        </span>
+                        <span className="text-[12px]">Drives</span>
+                      </div>
+                      <span className="text-[8px] font-bold bg-surface-variant border border-outline px-1 rounded text-emerald-400">PUBLIC</span>
+                    </div>
+                    {expandedFolders.drives && (
+                      <ul className="ml-4 mt-1 space-y-0.5 border-l border-outline pl-2">
+                        {dbDocs.filter(d => d.source_type === "Drive").map(doc => (
+                          <li 
+                            key={doc.id}
+                            onClick={() => handleFileClick(doc.id)}
+                            className="flex items-center gap-2 text-slate-300 hover:text-primary cursor-pointer py-1 px-1.5 rounded hover:bg-surface-variant transition-all text-[11px] truncate"
+                          >
+                            <span className="material-symbols-outlined text-[13px] shrink-0">description</span> 
+                            <span className="truncate">{doc.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+
+                  <li className="flex flex-col mt-1">
+                    <div 
+                      onClick={() => toggleFolder("wikis")}
+                      className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.wikis ? "text-primary font-medium" : "text-on-surface"}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {expandedFolders.wikis ? "folder_open" : "folder"}
+                        </span>
+                        <span className="text-[12px]">Wikis</span>
+                      </div>
+                      <span className="text-[8px] font-bold bg-surface-variant border border-outline px-1 rounded text-cyan-400">ENG</span>
+                    </div>
+                    {expandedFolders.wikis && (
+                      <ul className="ml-4 mt-1 space-y-0.5 border-l border-outline pl-2">
+                        {dbDocs.filter(d => d.source_type === "Wiki").map(doc => (
+                          <li 
+                            key={doc.id}
+                            onClick={() => handleFileClick(doc.id)}
+                            className="flex items-center gap-2 text-slate-300 hover:text-primary cursor-pointer py-1 px-1.5 rounded hover:bg-surface-variant transition-all text-[11px] truncate"
+                          >
+                            <span className="material-symbols-outlined text-[13px] shrink-0">description</span> 
+                            <span className="truncate">{doc.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+
+                  <li className="flex flex-col mt-1">
+                    <div 
+                      onClick={() => toggleFolder("tickets")}
+                      className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.tickets ? "text-primary font-medium" : "text-on-surface"}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {expandedFolders.tickets ? "folder_open" : "folder"}
+                        </span>
+                        <span className="text-[12px]">Tickets</span>
+                      </div>
+                      <span className="text-[8px] font-bold bg-surface-variant border border-outline px-1 rounded text-amber-400">HR</span>
+                    </div>
+                    {expandedFolders.tickets && (
+                      <ul className="ml-4 mt-1 space-y-0.5 border-l border-outline pl-2">
+                        {dbDocs.filter(d => d.source_type === "Ticket").map(doc => (
+                          <li 
+                            key={doc.id}
+                            onClick={() => handleFileClick(doc.id)}
+                            className="flex items-center gap-2 text-slate-300 hover:text-primary cursor-pointer py-1 px-1.5 rounded hover:bg-surface-variant transition-all text-[11px] truncate"
+                          >
+                            <span className="material-symbols-outlined text-[13px] shrink-0">confirmation_number</span> 
+                            <span className="truncate">{doc.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+
+                  <li className="flex flex-col mt-1">
+                    <div 
+                      onClick={() => toggleFolder("chats")}
+                      className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.chats ? "text-primary font-medium" : "text-on-surface"}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {expandedFolders.chats ? "folder_open" : "folder"}
+                        </span>
+                        <span className="text-[12px]">Chat Logs</span>
+                      </div>
+                      <span className="text-[8px] font-bold bg-surface-variant border border-outline px-1 rounded text-rose-400">EXEC</span>
+                    </div>
+                    {expandedFolders.chats && (
+                      <ul className="ml-4 mt-1 space-y-0.5 border-l border-outline pl-2">
+                        {dbDocs.filter(d => d.source_type === "Chat").map(doc => (
+                          <li 
+                            key={doc.id}
+                            onClick={() => handleFileClick(doc.id)}
+                            className={`flex items-center gap-2 cursor-pointer py-1 px-1.5 rounded hover:bg-surface-variant transition-all text-[11px] truncate ${
+                              doc.access_level === "HR" || doc.access_level === "EXEC" ? "text-rose-400" : "text-primary"
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[13px] shrink-0">
+                              {doc.access_level === "HR" || doc.access_level === "EXEC" ? "lock" : "chat"}
+                            </span> 
+                            <span className="truncate">{doc.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                </ul>
+              </div>
+
+              <div className="p-4 border-t border-outline bg-background space-y-3">
+                <div className="text-[10px] font-bold text-[#dec9e9] uppercase tracking-wider">Role Switcher</div>
+                <div className="border border-outline bg-surface-variant p-2.5 rounded flex flex-col gap-0.5">
+                  <div className="font-bold text-white text-xs">Software Engineer</div>
+                  <div className="text-[9px] text-[#dec9e9] font-mono-data">Node_02 // Active</div>
+                </div>
+                <div className="border border-outline opacity-50 p-2.5 rounded flex flex-col gap-0.5 cursor-not-allowed">
+                  <div className="font-bold text-[#dec9e9] text-xs">HR Lead</div>
+                  <div className="text-[9px] text-[#dec9e9]/60 font-mono-data">HR_Manager // Locked</div>
+                </div>
+                <div className="border border-outline opacity-50 p-2.5 rounded flex flex-col gap-0.5 cursor-not-allowed">
+                  <div className="font-bold text-[#dec9e9] text-xs">CEO Executive</div>
+                  <div className="text-[9px] text-[#dec9e9]/60 font-mono-data">Executive // Locked</div>
+                </div>
+                {session.is_locked && (
+                  <button 
+                    onClick={handleReset}
+                    className="w-full bg-error text-white font-label-md text-xs py-2 rounded btn-glow flex items-center justify-center gap-1 mt-2"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">warning</span> RESET DISPATCH
+                  </button>
+                )}
+              </div>
+            </nav>
+          )}
+
+          {isLeftSidebarOpen && (
+            <div 
+              onMouseDown={startResizeSidebar}
+              className="w-0.5 hover:bg-primary cursor-col-resize z-50 self-stretch bg-outline" 
+            />
+          )}
+
+          <section className="flex-1 bg-background flex flex-col min-w-0 p-4 gap-4 overflow-hidden relative">
+            <div className="flex-1 overflow-y-auto space-y-4">
+              
+              <div className="bg-surface border border-outline p-4 rounded-lg flex flex-col gap-2 shrink-0">
+                <div className="text-[10px] font-bold text-white tracking-wider">COMMAND CENTER</div>
+                <form onSubmit={handleQuery} className="flex items-center gap-2">
+                  <span className="text-primary font-mono-data text-xs">&gt; QUERY:</span>
+                  <input 
+                    className="flex-1 bg-transparent border-none outline-none font-mono-data text-[#dec9e9] placeholder:text-[#dec9e9]/40 focus:ring-0 p-0 text-xs"
+                    placeholder="Search corporate memory graph..."
+                    type="text" 
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    disabled={session.is_locked}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={session.is_locked || isLoading}
+                    className="px-4 py-1.5 bg-[#7251b5] text-white font-bold text-xs uppercase tracking-wide rounded hover:bg-[#815ac0] active:scale-95 transition-all btn-glow"
+                  >
+                    EXECUTE
+                  </button>
+                </form>
+              </div>
+
+              <div className="bg-surface border border-outline p-4 rounded-lg flex flex-col gap-3 shrink-0">
+                <div className="text-[10px] font-bold text-white tracking-wider">MULTI-AGENT ORCHESTRATION CHAIN</div>
+                
+                <div className="space-y-2.5 font-mono-data text-xs">
+                  <div className="flex items-start gap-3 p-2.5 rounded bg-background border border-outline">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${results ? "bg-[#7251b5] border-[#7251b5] text-white" : "border-outline text-slate-500"}`}>
+                      <span className="material-symbols-outlined text-[12px] font-bold">check</span>
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">Planner Agent</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Deconstructed query into 3 sub-tasks. Required sources identified.</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-2.5 rounded bg-background border border-outline">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                      isLoading ? "border-primary text-primary animate-pulse" :
+                      results ? "bg-[#7251b5] border-[#7251b5] text-white" : "border-outline text-slate-500"
+                    }`}>
+                      <span className="material-symbols-outlined text-[12px] font-bold">{isLoading ? "hourglass_empty" : "check"}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-white">Knowledge Graph Retrieval Engine</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Traversing graph edges completed. Found matching nodes.</div>
+                      {results && results.status === "breach" && (
+                        <div className="mt-2 bg-red-950/20 border border-red-900/50 p-2 rounded text-[10px] text-rose-300">
+                          &gt; match (n:Document)-[:MENTIONS]-&gt;(e:Concept)<br/>
+                          &gt; where n.access_level &lt;= 'ENG'<br/>
+                          &gt; [Stream active: access restriction violation triggered]
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-2.5 rounded bg-background border border-outline">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                      results && results.status !== "breach" ? "bg-[#7251b5] border-[#7251b5] text-white" : "border-outline text-slate-500"
+                    }`}>
+                      <span className="material-symbols-outlined text-[12px] font-bold">check</span>
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">Synthesis Agent</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Awaiting retrieval payload. Final response synthesized.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {results && (
+                <div className="bg-surface border border-outline p-4 rounded-lg flex flex-col gap-2 shrink-0">
+                  <div className="text-[10px] font-bold text-white tracking-wider">SYNTHESIZED ANSWER</div>
+                  {results.status === "breach" ? (
+                    <div className="border border-red-900/50 bg-red-950/20 p-4 rounded text-rose-300 text-xs leading-relaxed font-mono-data">
+                      Authorization level check rejected: Standard access role lacks validation credentials to resolve restricted entity database clusters. Connection terminated.
+                    </div>
+                  ) : (
+                    <div className="text-slate-200 text-xs leading-relaxed font-mono-data select-text whitespace-pre-wrap">
+                      {results.documents && results.documents[0] ? results.documents[0].content : "No answers returned."}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-background border border-outline rounded-lg overflow-hidden flex flex-col h-44 shrink-0 mt-2">
+              <div className="bg-surface px-3 py-1.5 border-b border-outline flex items-center justify-between">
+                <span className="text-[10px] font-bold text-on-surface font-mono-data">system_logs.json</span>
+              </div>
+              <div className="p-3 overflow-y-auto text-[10px] font-mono-data leading-relaxed text-slate-400 flex flex-col gap-0.5 select-text">
+                {logs.map((log) => (
+                  <div key={log.id} className="flex gap-3">
+                    <span className="opacity-40 select-none whitespace-nowrap">{log.timestamp.split("T")[1]?.slice(0, 8) || log.timestamp}</span>
+                    <span className="text-primary">[{log.component}]</span>
+                    <span>{log.msg}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {isRightSidebarOpen && (
+            <div 
+              onMouseDown={startResizeLedger}
+              className="w-0.5 hover:bg-primary cursor-col-resize z-50 self-stretch bg-outline" 
+            />
+          )}
+
+          {isRightSidebarOpen && (
+            <aside 
+              style={{ width: `${ledgerWidth}px` }} 
+              className="bg-surface border-l border-outline flex flex-col h-full shrink-0 z-30 p-4 gap-4"
+            >
+              <div className="text-[11px] font-bold text-white tracking-wider">INSIGHT LEDGER</div>
+              
+              <div className="bg-background border border-outline p-3 rounded-lg flex flex-col gap-2 shrink-0">
+                <div className="text-[10px] font-bold text-on-surface uppercase tracking-wider">VERIFIED CITATIONS</div>
+                {results && results.documents && results.documents.map(doc => (
+                  <div 
+                    key={doc.id}
+                    onClick={() => handleFileClick(doc.id)} 
+                    className="bg-surface border border-outline p-2 rounded cursor-pointer hover:border-primary"
+                  >
+                    <div className="text-white text-xs font-bold truncate">{doc.name}</div>
+                    <div className="text-[9px] text-[#dec9e9]/70 font-mono-data truncate mt-0.5">{doc.url}</div>
+                  </div>
+                ))}
+                {(!results || !results.documents || results.documents.length === 0) && (
+                  <div className="text-[10px] text-slate-500 italic">No citations found</div>
+                )}
+              </div>
+
+              <div className="flex-1 bg-background border border-outline rounded-lg p-3 flex flex-col gap-2 relative">
+                <div className="text-[10px] font-bold text-[#dec9e9] uppercase tracking-wider">ORG KNOWLEDGE GRAPH</div>
+                <div className="flex-1 relative overflow-hidden">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ stroke: "var(--outline-variant)", strokeWidth: "1.5px" }}>
+                    <line x1="50%" x2="20%" y1="25%" y2="65%"></line>
+                    <line x1="50%" x2="80%" y1="25%" y2="65%"></line>
+                    <line x1="50%" x2="50%" y1="25%" y2="85%"></line>
+                    <line className="dash-anim" style={{ stroke: "var(--primary)", strokeWidth: "2px" }} x1="50%" x2="20%" y1="25%" y2="65%"></line>
+                  </svg>
+
+                  <div className="absolute top-[25%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-7 h-7 bg-surface border border-primary flex items-center justify-center rounded shadow z-10">
+                    <span className="material-symbols-outlined text-[14px] text-primary">hub</span>
+                  </div>
+                  <div className="absolute top-[25%] left-[50%] -translate-x-1/2 -translate-y-8 text-[9px] font-bold text-primary uppercase tracking-wide">Query Node</div>
+
+                  <div className="absolute top-[65%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-surface border border-outline flex items-center justify-center rounded shadow z-10 hover:border-primary cursor-pointer">
+                    <span className="material-symbols-outlined text-[12px] text-white">description</span>
+                  </div>
+                  <div className="absolute top-[65%] left-[20%] -translate-x-1/2 translate-y-4 text-[9px] text-on-surface">arch_04.md</div>
+
+                  <div className="absolute top-[65%] left-[80%] -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-surface border border-outline flex items-center justify-center rounded shadow z-10">
+                    <span className="material-symbols-outlined text-[12px] text-white">person</span>
+                  </div>
+                  <div className="absolute top-[65%] left-[80%] -translate-x-1/2 translate-y-4 text-[9px] text-on-surface">Standard_Eng</div>
+
+                  <div className="absolute top-[85%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-surface border border-outline flex items-center justify-center rounded shadow z-10">
+                    <span className="material-symbols-outlined text-[12px] text-white">forum</span>
+                  </div>
+                  <div className="absolute top-[85%] left-[50%] -translate-x-1/2 translate-y-4 text-[9px] text-on-surface">Slack Chat</div>
+                </div>
+              </div>
+            </aside>
+          )}
+        </main>
+
+        {selectedDoc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-surface border border-outline w-full max-w-xl p-6 rounded-lg shadow-xl relative">
+              <button 
+                onClick={() => setSelectedDoc(null)}
+                className="absolute top-4 right-4 text-on-surface hover:text-white cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+              <div className="flex items-center gap-2 border-b border-outline pb-3 mb-4">
+                <span className="material-symbols-outlined text-primary text-[20px]">description</span>
+                <h2 className="font-bold text-white text-sm">{selectedDoc.name}</h2>
+              </div>
+              <div className="space-y-4 text-xs">
+                <div className="bg-background p-4 border border-outline rounded max-h-60 overflow-y-auto font-mono-data leading-relaxed text-slate-300">
+                  {selectedDoc.content}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[#dec9e9]/60 uppercase block text-[9px] font-bold">Source Type</span>
+                    <span className="text-primary font-bold">{selectedDoc.source_type}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#dec9e9]/60 uppercase block text-[9px] font-bold">Access Clearance</span>
+                    <span className="text-amber-400 font-bold">{selectedDoc.access_level}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSettings && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="bg-surface border border-outline w-full max-w-4xl h-[80vh] p-6 rounded-lg shadow-xl relative flex flex-col">
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="absolute top-4 right-4 text-on-surface hover:text-white cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+              <div className="flex items-center gap-2 border-b border-outline pb-3 mb-4">
+                <span className="material-symbols-outlined text-primary text-[20px]">settings_accessibility</span>
+                <h2 className="font-bold text-white text-sm">Nuara Governance & Admin Console</h2>
+              </div>
+
+              <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
+                <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+                  <div className="border border-outline bg-background p-4 rounded">
+                    <h3 className="text-primary uppercase mb-3 text-xs font-bold">Upload / Seed Document</h3>
+                    <form onSubmit={handleCreateDocument} className="space-y-3">
+                      <div>
+                        <label className="text-[9px] text-[#dec9e9] uppercase block mb-1 font-bold">File Name</label>
+                        <input 
+                          className="w-full bg-surface border border-outline rounded focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-white"
+                          placeholder="e.g. Q4_Strategy.txt"
+                          type="text" 
+                          value={newDoc.name}
+                          onChange={e => setNewDoc({...newDoc, name: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-[#dec9e9] uppercase block mb-1 font-bold">Content Body</label>
+                        <textarea 
+                          className="w-full bg-surface border border-outline rounded focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-white h-24 resize-none"
+                          placeholder="Type document contents..."
+                          value={newDoc.content}
+                          onChange={e => setNewDoc({...newDoc, content: e.target.value})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[9px] text-[#dec9e9] uppercase block mb-1 font-bold">Source Folder</label>
+                          <select 
+                            className="w-full bg-surface border border-outline rounded focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-white"
+                            value={newDoc.source_type}
+                            onChange={e => setNewDoc({...newDoc, source_type: e.target.value})}
+                          >
+                            <option value="Drive">Drives</option>
+                            <option value="Wiki">Wikis</option>
+                            <option value="Ticket">Tickets</option>
+                            <option value="Chat">Chat Logs</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-[#dec9e9] uppercase block mb-1 font-bold">Required Clearance</label>
+                          <select 
+                            className="w-full bg-[#140d21] border border-[#301e4a] rounded focus:border-[#a06cd5] focus:ring-0 font-mono-data text-xs p-2 text-white"
+                            value={newDoc.access_level}
+                            onChange={e => setNewDoc({...newDoc, access_level: e.target.value})}
+                          >
+                            <option value="PUBLIC">PUBLIC</option>
+                            <option value="ENG">ENG</option>
+                            <option value="HR">HR</option>
+                            <option value="EXEC">EXEC</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-[#dec9e9] uppercase block mb-1 font-bold">Resource URL</label>
+                        <input 
+                          className="w-full bg-surface border border-outline rounded focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-white"
+                          placeholder="https://nexus.internal/docs/filename"
+                          type="text" 
+                          value={newDoc.url}
+                          onChange={e => setNewDoc({...newDoc, url: e.target.value})}
+                        />
+                      </div>
+                      <button 
+                        type="submit"
+                        className="w-full py-2 bg-[#7251b5] text-white font-bold uppercase tracking-wider text-xs rounded hover:bg-[#815ac0] transition-colors btn-glow"
+                      >
+                        Seed to Vector & Graph Stores
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <div className="w-80 flex flex-col gap-4 overflow-y-auto border-l border-outline pl-6">
+                  <div>
+                    <h3 className="text-primary uppercase mb-2 text-xs font-bold">Access Control List</h3>
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                      {dbDocs.map(doc => (
+                        <div key={doc.id} className="border border-outline bg-background p-2 rounded flex flex-col gap-1">
+                          <div className="font-mono-data text-[11px] text-white truncate font-semibold">{doc.name}</div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-[9px] text-[#dec9e9]/70 font-bold uppercase">Clearance</span>
+                            <select 
+                              className="bg-surface border border-outline rounded font-mono-data text-[9px] p-0.5 text-white focus:outline-none"
+                              value={doc.access_level}
+                              onChange={e => handleUpdatePermission(doc.id, e.target.value)}
+                            >
+                              <option value="PUBLIC">PUBLIC</option>
+                              <option value="ENG">ENG</option>
+                              <option value="HR">HR</option>
+                              <option value="EXEC">EXEC</option>
+                            </select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-outline pt-4 mt-auto">
+                    <h3 className="text-rose-400 uppercase mb-2 text-xs font-bold">Gap Analytics</h3>
+                    <div className="bg-background border border-outline p-3 rounded text-[10px] font-mono-data text-slate-400 leading-relaxed max-h-40 overflow-y-auto select-text">
+                      {gapAnalysis.map((gap, i) => (
+                        <div key={i} className="mb-2 last:mb-0 border-b border-slate-800 pb-1">
+                          &gt; {gap}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200 ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
       {session.is_locked && <div className="crt-overlay"></div>}
@@ -727,7 +1304,7 @@ function App() {
             {session.is_locked && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-surface/90 backdrop-blur-md">
                 <div aria-hidden="true" className="absolute inset-0 opacity-5 font-mono-data text-[7px] text-error overflow-hidden break-all leading-none z-0 select-none">
-                  01000100 01000101 01001110 01001001 01000101 01000100 00100000 01000001 01000011 01000011 01000101 01010011 01010011 00100000 01010110 01001001 01001110 01001100 01000001 01010100 01001001 01001111 01011010
+                  01000100 01000101 01001110 01001001 01000100 00100000 01000001 01000011 01000011 01000101 01010011 01010011 00100000 01010110 01001001 01001110 01001100 01000001 01010100 01001001 01001111 01011010
                 </div>
                 <div className="relative z-10 text-center p-4 border border-outline rounded-2xl bg-background shadow-lg max-w-[280px]">
                   <span className="material-symbols-outlined text-4xl text-error mb-2">lock</span>
