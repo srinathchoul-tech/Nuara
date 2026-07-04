@@ -63,14 +63,21 @@ function App() {
   const fetchAdminData = async () => {
     try {
       const resDocs = await fetch(`${API_BASE}/admin/documents`);
-      const dataDocs = await resDocs.json();
-      setDbDocs(dataDocs);
+      if (resDocs.ok) {
+        const dataDocs = await resDocs.json();
+        setDbDocs(Array.isArray(dataDocs) ? dataDocs : []);
+      } else {
+        setDbDocs([]);
+      }
 
       const resGaps = await fetch(`${API_BASE}/admin/gap-analysis`);
-      const dataGaps = await resGaps.json();
-      setGapAnalysis(dataGaps.gaps);
+      if (resGaps.ok) {
+        const dataGaps = await resGaps.json();
+        setGapAnalysis(dataGaps.gaps || []);
+      }
     } catch (err) {
       console.error(err);
+      setDbDocs([]);
     }
   };
 
