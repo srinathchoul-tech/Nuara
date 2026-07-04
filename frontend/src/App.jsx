@@ -27,6 +27,18 @@ function App() {
 
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [theme, setTheme] = useState("dark");
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const [dbDocs, setDbDocs] = useState([]);
   const [newDoc, setNewDoc] = useState({
@@ -271,6 +283,15 @@ function App() {
     fetchLogs();
     fetchAdminData();
     const interval = setInterval(fetchLogs, 3000);
+    
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
     return () => clearInterval(interval);
   }, []);
 
@@ -316,6 +337,14 @@ function App() {
             >
               <span className="material-symbols-outlined text-[20px]">security</span>
               {session.is_locked && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-error rounded-full"></span>}
+            </button>
+            <button 
+              onClick={toggleTheme}
+              className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {theme === "dark" ? "light_mode" : "dark_mode"}
+              </span>
             </button>
             <button className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">terminal</span>
