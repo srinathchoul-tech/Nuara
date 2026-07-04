@@ -78,3 +78,40 @@ def get_all_documents():
             return [{"id": r[0], "name": r[1], "content": r[2], "source_type": r[3], "access_level": r[4], "url": r[5]} for r in rows]
     finally:
         conn.close()
+
+def add_document(doc_id, name, content, source_type, access_level, url):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute(
+                "INSERT INTO documents (id, name, content, source_type, access_level, url) VALUES (?, ?, ?, ?, ?, ?)",
+                (doc_id, name, content, source_type, access_level, url)
+            )
+            cursor.execute("INSERT INTO nodes (id, label, type) VALUES (?, ?, ?)", (doc_id, name, "Document"))
+            cursor.execute("INSERT INTO edges (source_id, target_id, relationship) VALUES (?, ?, ?)", ("query", doc_id, "MENTIONS"))
+        else:
+            cursor.execute(
+                "INSERT INTO documents (id, name, content, source_type, access_level, url) VALUES (%s, %s, %s, %s, %s, %s)",
+                (doc_id, name, content, source_type, access_level, url)
+            )
+            cursor.execute("INSERT INTO nodes (id, label, type) VALUES (%s, %s, %s)", (doc_id, name, "Document"))
+            cursor.execute("INSERT INTO edges (source_id, target_id, relationship) VALUES (%s, %s, %s)", ("query", doc_id, "MENTIONS"))
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+def update_document_permission(doc_id, access_level):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("UPDATE documents SET access_level = ? WHERE id = ?", (access_level, doc_id))
+        else:
+            cursor.execute("UPDATE documents SET access_level = %s WHERE id = %s", (access_level, doc_id))
+        conn.commit()
+    finally:
+        conn.close()
+

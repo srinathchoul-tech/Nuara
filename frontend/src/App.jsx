@@ -13,6 +13,31 @@ function App() {
   const [results, setResults] = useState(null);
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [ledgerWidth, setLedgerWidth] = useState(320);
+  const [logsHeight, setLogsHeight] = useState(192);
+
+  const [expandedFolders, setExpandedFolders] = useState({
+    drives: true,
+    wikis: false,
+    tickets: false,
+    chats: true
+  });
+
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const [dbDocs, setDbDocs] = useState([]);
+  const [newDoc, setNewDoc] = useState({
+    name: "",
+    content: "",
+    source_type: "Drive",
+    access_level: "PUBLIC",
+    url: ""
+  });
+  const [gapAnalysis, setGapAnalysis] = useState([]);
+
   const logEndRef = useRef(null);
 
   const fetchSession = async () => {
@@ -30,6 +55,20 @@ function App() {
       const res = await fetch(`${API_BASE}/logs`);
       const data = await res.json();
       setLogs(data.reverse());
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchAdminData = async () => {
+    try {
+      const resDocs = await fetch(`${API_BASE}/admin/documents`);
+      const dataDocs = await resDocs.json();
+      setDbDocs(dataDocs);
+
+      const resGaps = await fetch(`${API_BASE}/admin/gap-analysis`);
+      const dataGaps = await resGaps.json();
+      setGapAnalysis(dataGaps.gaps);
     } catch (err) {
       console.error(err);
     }
@@ -91,12 +130,148 @@ function App() {
     }
   };
 
+  const handleFileClick = (docId) => {
+    if (session.is_locked) return;
+
+    const documentItem = dbDocs.find(d => d.id === docId);
+    if (!documentItem) return;
+
+    const docClearance = documentItem.access_level;
+    const clearances = { "PUBLIC": 0, "ENG": 1, "HR": 2, "EXEC": 3 };
+    const userClearanceVal = clearances[session.clearance] || 0;
+    const docClearanceVal = clearances[docClearance] || 0;
+
+    if (userClearanceVal < docClearanceVal) {
+      setQuery(`ACCESS_DENIED: Requesting node ${documentItem.name}`);
+      handleQuerySimulatedBreach(documentItem);
+    } else {
+      setSelectedDoc(documentItem);
+    }
+  };
+
+  const handleQuerySimulatedBreach = async (documentItem) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: `RESOLVE ENTITY: ${documentItem.name}` })
+      });
+      const data = await res.json();
+      setSession(prev => ({ ...prev, is_locked: true }));
+      setResults(data);
+      fetchLogs();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateDocument = async (e) => {
+    e.preventDefault();
+    if (!newDoc.name || !newDoc.content) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newDoc)
+      });
+      if (res.ok) {
+        setNewDoc({
+          name: "",
+          content: "",
+          source_type: "Drive",
+          access_level: "PUBLIC",
+          url: ""
+        });
+        fetchAdminData();
+        fetchLogs();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdatePermission = async (docId, newLevel) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/documents/permissions`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doc_id: docId, access_level: newLevel })
+      });
+      if (res.ok) {
+        fetchAdminData();
+        fetchLogs();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const startResizeSidebar = (e) => {
+    e.preventDefault();
+    const handleMouseMove = (moveEvent) => {
+      const newWidth = Math.max(180, Math.min(400, moveEvent.clientX));
+      setSidebarWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const startResizeLedger = (e) => {
+    e.preventDefault();
+    const handleMouseMove = (moveEvent) => {
+      const newWidth = Math.max(240, Math.min(480, window.innerWidth - moveEvent.clientX));
+      setLedgerWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const startResizeLogs = (e) => {
+    e.preventDefault();
+    const handleMouseMove = (moveEvent) => {
+      const newHeight = Math.max(100, Math.min(350, window.innerHeight - moveEvent.clientY));
+      setLogsHeight(newHeight);
+    };
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const toggleFolder = (folder) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [folder]: !prev[folder]
+    }));
+  };
+
   useEffect(() => {
     fetchSession();
     fetchLogs();
+    fetchAdminData();
     const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (showSettings) {
+      fetchAdminData();
+    }
+  }, [showSettings]);
 
   useEffect(() => {
     if (logEndRef.current) {
@@ -128,14 +303,20 @@ function App() {
 
         <div className="flex-1 flex justify-end items-center gap-4">
           <div className="flex items-center gap-2">
-            <button className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1 cursor-pointer active:opacity-80 relative">
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 relative flex items-center justify-center"
+            >
               <span className="material-symbols-outlined text-[20px]">security</span>
-              {session.is_locked && <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-error rounded-full"></span>}
+              {session.is_locked && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-error rounded-full"></span>}
             </button>
-            <button className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1 cursor-pointer active:opacity-80">
+            <button className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">terminal</span>
             </button>
-            <button className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1 cursor-pointer active:opacity-80">
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center"
+            >
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </button>
           </div>
@@ -152,7 +333,10 @@ function App() {
       </header>
 
       <main className="flex-1 flex overflow-hidden">
-        <nav className="bg-surface-container-low border-r border-outline-variant w-64 flex flex-col h-full z-40 shrink-0">
+        <nav 
+          style={{ width: `${sidebarWidth}px` }} 
+          className="bg-surface-container-low border-r border-outline-variant flex flex-col h-full z-40 shrink-0"
+        >
           <div className="p-panel-padding border-b border-outline-variant">
             <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-1">Nuara Core</div>
             <div className={`font-mono-data text-mono-data ${session.is_locked ? "text-error" : "text-primary"}`}>
@@ -162,73 +346,133 @@ function App() {
 
           <div className="flex-1 overflow-y-auto p-panel-padding">
             <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-4">Data Source Vault</div>
-            <ul className="space-y-2 ml-2">
+            <ul className="space-y-2 ml-1">
               <li className="flex flex-col">
-                <div className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1">
+                <div 
+                  onClick={() => toggleFolder("drives")}
+                  className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-outline-variant text-[16px]">folder_open</span>
+                    <span className="material-symbols-outlined text-outline-variant text-[16px]">
+                      {expandedFolders.drives ? "folder_open" : "folder"}
+                    </span>
                     <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Drives</span>
                   </div>
                   <span className="bg-surface-container px-1 py-0.5 text-[10px] text-tertiary border border-outline-variant">PUBLIC</span>
                 </div>
-                <ul className="ml-6 mt-1 space-y-1 tree-line">
-                  <li 
-                    onClick={() => selectDocumentQuery("Q3_Report.pdf", "QUERY: Adopted hybrid RAG model for latency")}
-                    className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">description</span> Q3_Report.pdf
-                  </li>
-                  <li 
-                    onClick={() => selectDocumentQuery("Architecture_v2.docx", "QUERY: Retrieve RAG architecture decisions from Q3 planning")}
-                    className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">description</span> Architecture_v2.docx
-                  </li>
-                </ul>
+                {expandedFolders.drives && (
+                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                    {dbDocs.filter(d => d.source_type === "Drive").map(doc => (
+                      <li 
+                        key={doc.id}
+                        onClick={() => handleFileClick(doc.id)}
+                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">description</span> 
+                        <span className="truncate">{doc.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
 
               <li className="flex flex-col mt-2">
-                <div className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1">
+                <div 
+                  onClick={() => toggleFolder("wikis")}
+                  className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-outline-variant text-[16px]">folder_open</span>
+                    <span className="material-symbols-outlined text-outline-variant text-[16px]">
+                      {expandedFolders.wikis ? "folder_open" : "folder"}
+                    </span>
                     <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Wikis</span>
                   </div>
                   <span className="bg-surface-container px-1 py-0.5 text-[10px] text-primary border border-outline-variant">ENG</span>
                 </div>
+                {expandedFolders.wikis && (
+                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                    {dbDocs.filter(d => d.source_type === "Wiki").map(doc => (
+                      <li 
+                        key={doc.id}
+                        onClick={() => handleFileClick(doc.id)}
+                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">description</span> 
+                        <span className="truncate">{doc.name}</span>
+                      </li>
+                    ))}
+                    {dbDocs.filter(d => d.source_type === "Wiki").length === 0 && (
+                      <li className="text-[10px] text-outline p-1 italic">No records</li>
+                    )}
+                  </ul>
+                )}
               </li>
 
               <li className="flex flex-col mt-2">
-                <div className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1">
+                <div 
+                  onClick={() => toggleFolder("tickets")}
+                  className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-outline-variant text-[16px]">folder_open</span>
+                    <span className="material-symbols-outlined text-outline-variant text-[16px]">
+                      {expandedFolders.tickets ? "folder_open" : "folder"}
+                    </span>
                     <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Tickets</span>
                   </div>
                   <span className="bg-surface-container px-1 py-0.5 text-[10px] text-error border border-outline-variant">HR</span>
                 </div>
+                {expandedFolders.tickets && (
+                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                    {dbDocs.filter(d => d.source_type === "Ticket").map(doc => (
+                      <li 
+                        key={doc.id}
+                        onClick={() => handleFileClick(doc.id)}
+                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">confirmation_number</span> 
+                        <span className="truncate">{doc.name}</span>
+                      </li>
+                    ))}
+                    {dbDocs.filter(d => d.source_type === "Ticket").length === 0 && (
+                      <li className="text-[10px] text-outline p-1 italic">No records</li>
+                    )}
+                  </ul>
+                )}
               </li>
 
               <li className="flex flex-col mt-2">
-                <div className={`flex items-center justify-between group cursor-pointer p-1 ${session.is_locked ? "bg-error/10 border-l-2 border-error" : "bg-secondary-container border-l-2 border-primary"}`}>
+                <div 
+                  onClick={() => toggleFolder("chats")}
+                  className={`flex items-center justify-between group cursor-pointer p-1 ${session.is_locked ? "bg-error/10 border-l-2 border-error" : "bg-secondary-container border-l-2 border-primary"}`}
+                >
                   <div className="flex items-center gap-2">
-                    <span className={`material-symbols-outlined text-[16px] ${session.is_locked ? "text-error" : "text-primary"}`}>folder_open</span>
+                    <span className={`material-symbols-outlined text-[16px] ${session.is_locked ? "text-error" : "text-primary"}`}>
+                      {expandedFolders.chats ? "folder_open" : "folder"}
+                    </span>
                     <span className={`font-body-sm text-body-sm ${session.is_locked ? "text-error" : "text-primary"}`}>Chat Logs</span>
                   </div>
                   <span className={`bg-surface-container px-1 py-0.5 text-[10px] border ${session.is_locked ? "text-error border-error" : "text-error border-outline"}`}>EXEC</span>
                 </div>
-                <ul className="ml-6 mt-1 space-y-1 tree-line">
-                  <li 
-                    onClick={() => selectDocumentQuery("slack_#eng_leads", "QUERY: CEO comments on permissions gateway")}
-                    className="flex items-center gap-2 text-primary cursor-pointer p-1 text-[11px]"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">chat</span> #strategy-2025
-                  </li>
-                  <li 
-                    onClick={() => selectDocumentQuery("HR_Salaries_FY24", "QUERY: What is the average bonus for L5 engineers?")}
-                    className={`flex items-center gap-2 cursor-pointer p-1 text-[11px] border rounded-sm ${session.is_locked ? "text-error bg-error/10 border-error" : "text-on-surface-variant border-transparent"}`}
-                  >
-                    <span className="material-symbols-outlined text-[14px]">lock</span> [HR_Salaries_FY24]
-                  </li>
-                </ul>
+                {expandedFolders.chats && (
+                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                    {dbDocs.filter(d => d.source_type === "Chat").map(doc => (
+                      <li 
+                        key={doc.id}
+                        onClick={() => handleFileClick(doc.id)}
+                        className={`flex items-center gap-2 cursor-pointer p-1 text-[11px] border rounded-sm ${
+                          doc.access_level === "HR" || doc.access_level === "EXEC"
+                            ? (session.is_locked ? "text-error bg-error/10 border-error" : "text-on-surface-variant border-transparent")
+                            : "text-primary border-transparent"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {doc.access_level === "HR" || doc.access_level === "EXEC" ? "lock" : "chat"}
+                        </span> 
+                        <span className="truncate">{doc.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             </ul>
           </div>
@@ -278,7 +522,12 @@ function App() {
           </div>
         </nav>
 
-        <section className="flex-1 bg-surface-container-lowest flex flex-col min-w-0 border-r border-outline-variant">
+        <div 
+          onMouseDown={startResizeSidebar}
+          className="w-1 bg-outline-variant hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0" 
+        />
+
+        <section className="flex-1 bg-surface-container-lowest flex flex-col min-w-0">
           <div className="p-panel-padding border-b border-outline-variant bg-surface-container-low flex flex-col gap-2">
             <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
               <span className="material-symbols-outlined text-[16px]">terminal</span> Command Center
@@ -422,7 +671,15 @@ function App() {
             )}
           </div>
 
-          <div className="h-48 border-t border-outline-variant bg-[#0a0e18] flex flex-col shrink-0">
+          <div 
+            onMouseDown={startResizeLogs}
+            className="h-1 w-full bg-outline-variant hover:bg-primary cursor-row-resize transition-colors duration-150 z-50 shrink-0" 
+          />
+
+          <div 
+            style={{ height: `${logsHeight}px` }} 
+            className="border-t border-outline-variant bg-[#0a0e18] flex flex-col shrink-0"
+          >
             <div className="bg-surface-container-high px-2 py-1 flex items-center justify-between border-b border-outline-variant">
               <span className="text-[10px] font-mono-data text-on-surface-variant">system_logs.json</span>
               <span className="material-symbols-outlined text-[14px] text-outline-variant hover:text-primary cursor-pointer">open_in_full</span>
@@ -446,7 +703,15 @@ function App() {
           </div>
         </section>
 
-        <aside className="w-80 bg-surface-container-low flex flex-col z-30 shrink-0 relative">
+        <div 
+          onMouseDown={startResizeLedger}
+          className="w-1 bg-outline-variant hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0" 
+        />
+
+        <aside 
+          style={{ width: `${ledgerWidth}px` }} 
+          className="bg-surface-container-low flex flex-col z-30 shrink-0 relative"
+        >
           {session.is_locked ? (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-surface-container-lowest/80 backdrop-blur-md border-l border-error/50">
               <div aria-hidden="true" className="absolute inset-0 opacity-10 font-mono-data text-[8px] text-error overflow-hidden break-all leading-none z-0" style={{ userSelect: "none" }}>
@@ -538,6 +803,171 @@ function App() {
           </div>
         </aside>
       </main>
+
+      {selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-outline-variant w-full max-w-xl p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setSelectedDoc(null)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <div className="flex items-center gap-2 border-b border-outline-variant pb-3 mb-4">
+              <span className="material-symbols-outlined text-primary text-[24px]">description</span>
+              <h2 className="font-headline-md text-headline-md font-bold text-on-surface">{selectedDoc.name}</h2>
+            </div>
+            <div className="space-y-4 font-body-md text-on-surface">
+              <div className="bg-surface-container p-4 border border-outline-variant max-h-60 overflow-y-auto select-text font-mono-data whitespace-pre-line leading-relaxed">
+                {selectedDoc.content}
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs font-mono-data pt-2">
+                <div>
+                  <span className="text-on-surface-variant uppercase block tracking-wider">Source Type</span>
+                  <span className="text-primary font-bold">{selectedDoc.source_type}</span>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant uppercase block tracking-wider">Access Clearance</span>
+                  <span className="text-tertiary font-bold">{selectedDoc.access_level}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-on-surface-variant uppercase block tracking-wider">Resource Path</span>
+                  <a href={selectedDoc.url} target="_blank" rel="noreferrer" className="text-primary hover:underline break-all">
+                    {selectedDoc.url}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-outline-variant w-full max-w-4xl h-[85vh] p-6 shadow-2xl relative flex flex-col">
+            <button 
+              onClick={() => setShowSettings(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <div className="flex items-center gap-2 border-b border-outline-variant pb-3 mb-4">
+              <span className="material-symbols-outlined text-primary text-[24px]">settings_accessibility</span>
+              <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Nuara Governance & Admin Console</h2>
+            </div>
+
+            <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
+              <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+                <div className="border border-outline-variant bg-surface-container-low p-4">
+                  <h3 className="font-label-md text-primary uppercase mb-3">Upload / Seed Document</h3>
+                  <form onSubmit={handleCreateDocument} className="space-y-3">
+                    <div>
+                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1">File Name</label>
+                      <input 
+                        className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                        placeholder="e.g. Q4_Strategy.txt"
+                        type="text" 
+                        value={newDoc.name}
+                        onChange={e => setNewDoc({...newDoc, name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Content Body</label>
+                      <textarea 
+                        className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface h-24 resize-none"
+                        placeholder="Type document contents..."
+                        value={newDoc.content}
+                        onChange={e => setNewDoc({...newDoc, content: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Source Folder</label>
+                        <select 
+                          className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                          value={newDoc.source_type}
+                          onChange={e => setNewDoc({...newDoc, source_type: e.target.value})}
+                        >
+                          <option value="Drive">Drives</option>
+                          <option value="Wiki">Wikis</option>
+                          <option value="Ticket">Tickets</option>
+                          <option value="Chat">Chat Logs</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Required Clearance</label>
+                        <select 
+                          className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                          value={newDoc.access_level}
+                          onChange={e => setNewDoc({...newDoc, access_level: e.target.value})}
+                        >
+                          <option value="PUBLIC">PUBLIC</option>
+                          <option value="ENG">ENG (Engineering)</option>
+                          <option value="HR">HR (Human Resources)</option>
+                          <option value="EXEC">EXEC (Executive)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Resource URL</label>
+                      <input 
+                        className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                        placeholder="https://nexus.internal/docs/filename"
+                        type="text" 
+                        value={newDoc.url}
+                        onChange={e => setNewDoc({...newDoc, url: e.target.value})}
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs hover:bg-primary-container transition-colors cursor-pointer"
+                    >
+                      Seed to Vector & Graph Stores
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div className="w-80 flex flex-col gap-4 overflow-y-auto border-l border-outline-variant pl-6">
+                <div>
+                  <h3 className="font-label-md text-primary uppercase mb-2">Access Control Governance</h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {dbDocs.map(doc => (
+                      <div key={doc.id} className="border border-outline-variant bg-surface-container-high p-2 flex flex-col gap-1">
+                        <div className="font-mono-data text-[11px] text-on-surface truncate font-bold">{doc.name}</div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-[9px] text-on-surface-variant uppercase">Clearance</span>
+                          <select 
+                            className="bg-surface border border-outline-variant font-mono-data text-[9px] p-0.5 text-on-surface"
+                            value={doc.access_level}
+                            onChange={e => handleUpdatePermission(doc.id, e.target.value)}
+                          >
+                            <option value="PUBLIC">PUBLIC</option>
+                            <option value="ENG">ENG</option>
+                            <option value="HR">HR</option>
+                            <option value="EXEC">EXEC</option>
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-outline-variant pt-4 mt-auto">
+                  <h3 className="font-label-md text-error uppercase mb-2">Knowledge Gap Analytics</h3>
+                  <div className="bg-[#0a0e18] border border-outline-variant p-3 text-[10px] font-mono-data text-on-surface-variant leading-relaxed max-h-40 overflow-y-auto">
+                    {gapAnalysis.map((gap, i) => (
+                      <div key={i} className="mb-2 last:mb-0 border-b border-outline-variant/10 pb-1">
+                        &gt; {gap}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

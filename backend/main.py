@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 from backend.database import init_db, get_db_connection
-from backend.postgres_db import get_user_role, write_audit_log, read_audit_logs
+from backend.postgres_db import get_user_role, write_audit_log, read_audit_logs, add_document, update_document_permission
 from backend.search import search_rag
 from backend.agent import simulate_agent_chain
 
@@ -30,6 +30,17 @@ class QueryRequest(BaseModel):
 
 class SwitchRoleRequest(BaseModel):
     user_id: str
+
+class CreateDocRequest(BaseModel):
+    name: str
+    content: str
+    source_type: str
+    access_level: str
+    url: str
+
+class UpdatePermRequest(BaseModel):
+    doc_id: str
+    access_level: str
 
 @app.on_event("startup")
 def startup_event():
@@ -106,6 +117,25 @@ def gap_analysis():
         gaps.append("No active knowledge gaps detected. Vector database contains coverage for current operations.")
         
     return {"gaps": gaps}
+
+@app.post("/api/admin/documents")
+def api_add_document(req: CreateDocRequest):
+    import uuid
+    doc_id = "doc_" + str(uuid.uuid4())[:8]
+    add_document(doc_id, req.name, req.content, req.source_type, req.access_level, req.url)
+    write_audit_log("INFO", "AdminConsole", f"Document '{req.name}' successfully added (Level: {req.access_level})")
+    return {"status": "success", "doc_id": doc_id}
+
+@app.put("/api/admin/documents/permissions")
+def api_update_permission(req: UpdatePermRequest):
+    update_document_permission(req.doc_id, req.access_level)
+    write_audit_log("INFO", "AdminConsole", f"Document ID '{req.doc_id}' clearance updated to '{req.access_level}'")
+    return {"status": "success"}
+
+@app.get("/api/admin/documents")
+def api_get_documents():
+    return get_all_documents()
+
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
