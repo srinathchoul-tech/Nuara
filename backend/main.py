@@ -152,10 +152,22 @@ def query_app_documentation(query_text: str):
         conn.close()
         
     import re
+    stop_words = {
+        "how", "many", "there", "in", "this", "website", "is", "are", "the", 
+        "a", "an", "of", "and", "or", "to", "for", "with", "about", "what", 
+        "why", "where", "who", "can", "you", "your", "my", "me", "do", "does", 
+        "did", "have", "has", "had", "we", "us", "our", "it", "its", "on", "at"
+    }
+    
     query_terms = set(re.findall(r"\w+", query_text.lower()))
+    meaningful_terms = query_terms - stop_words
+    
+    if not meaningful_terms:
+        meaningful_terms = query_terms
+        
     scored_chunks = []
     for chunk in chunks:
-        score = sum(1 for term in query_terms if term in chunk.lower())
+        score = sum(2 if term in chunk.lower() else 0 for term in meaningful_terms)
         if score > 0:
             scored_chunks.append((chunk, score))
             
@@ -217,7 +229,7 @@ def generate_architect_response(query_text: str, context_chunks: list):
             "RAG synthesis occurs."
         )
         
-    if any(k in query_lower for k in ["tech stack", "stack", "technology", "db", "database", "neo4j", "qdrant"]):
+    if any(k in query_lower for k in ["tech stack", "stack", "technology", "db", "database", "neo4j", "qdrant", "langgraph", "react", "fastapi"]):
         return (
             "Our core tech stack unifies React (Vite/Tailwind CSS) on the frontend, FastAPI for backend RAG routers, "
             "Qdrant/pgvector for text embedding search, Neo4j for mapping entity graph relations, and LangGraph "
@@ -248,8 +260,8 @@ def generate_architect_response(query_text: str, context_chunks: list):
                 cleaned_chunks.append(c)
         if cleaned_chunks:
             summary = " ".join(cleaned_chunks[:2])
-            if len(summary) > 280:
-                summary = summary[:280] + "..."
+            if len(summary) > 260:
+                summary = summary[:260] + "..."
             return (
                 f"Regarding your query, here is how NexusBrain is designed: {summary} "
                 "Let me know if you would like me to dive deeper into any specific component of our architecture."

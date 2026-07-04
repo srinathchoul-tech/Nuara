@@ -308,20 +308,24 @@ function App() {
     }
   }, [copilotMessages, copilotLoading]);
 
-  const handleCopilotSend = async (e) => {
-    if (e) e.preventDefault();
-    if (!copilotInput.trim()) return;
+  const suggestionChips = [
+    { label: "🔐 Security Model", query: "How does data security work?" },
+    { label: "🛠️ Tech Stack", query: "What is the core tech stack?" },
+    { label: "👥 User Roles", query: "How many roles are in this website?" },
+    { label: "📊 Org Graph", query: "What is the Organizational Graph?" }
+  ];
 
-    const userMsg = copilotInput;
-    setCopilotMessages(prev => [...prev, { sender: "user", text: userMsg }]);
-    setCopilotInput("");
+  const handleCopilotSendSimulated = async (queryText) => {
+    if (!queryText.trim()) return;
+
+    setCopilotMessages(prev => [...prev, { sender: "user", text: queryText }]);
     setCopilotLoading(true);
 
     try {
       const res = await fetch(`${API_BASE}/onboarding/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg })
+        body: JSON.stringify({ message: queryText })
       });
       if (res.ok) {
         const data = await res.json();
@@ -335,6 +339,14 @@ function App() {
     } finally {
       setCopilotLoading(false);
     }
+  };
+
+  const handleCopilotSend = async (e) => {
+    if (e) e.preventDefault();
+    if (!copilotInput.trim()) return;
+    const msg = copilotInput;
+    setCopilotInput("");
+    await handleCopilotSendSimulated(msg);
   };
 
   const selectDocumentQuery = (docName, queryText) => {
@@ -1031,6 +1043,23 @@ function App() {
                   </div>
                 </div>
               ))}
+              {copilotMessages.length <= 1 && (
+                <div className="p-3 bg-surface-variant/40 border border-outline rounded-xl mt-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">Suggested Topics</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {suggestionChips.map((chip, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleCopilotSendSimulated(chip.query)}
+                        className="p-2 bg-surface hover:bg-primary/10 border border-outline rounded-lg text-left text-[11px] text-on-surface transition-all active:scale-95 cursor-pointer truncate font-medium"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {copilotLoading && (
                 <div className="flex justify-start">
                   <div className="bg-surface border border-outline text-on-surface-variant rounded-2xl rounded-tl-none px-3.5 py-2 text-xs flex items-center gap-1.5">
