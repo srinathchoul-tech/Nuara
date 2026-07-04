@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import MainLogin from "./pages/MainLogin.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import GoogleLogin from "./pages/GoogleLogin.jsx";
+import GooglePassword from "./pages/GooglePassword.jsx";
+import "./styles.css";
 
 const API_BASE = "http://127.0.0.1:8000/api";
 
@@ -38,6 +43,8 @@ function App() {
   });
   const [gapAnalysis, setGapAnalysis] = useState([]);
   const [theme, setTheme] = useState("dark");
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("loggedUser"));
+  const [authRoute, setAuthRoute] = useState(() => window.location.hash.replace("#", "") || "/");
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -273,6 +280,31 @@ function App() {
   };
 
   useEffect(() => {
+    const handleHashChange = () => {
+      setAuthRoute(window.location.hash.replace("#", "") || "/");
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const handleLoginSuccess = async (email, role) => {
+    try {
+      await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role })
+      });
+      await fetchSession();
+      await fetchLogs();
+      setIsAuthenticated(true);
+      window.location.hash = "";
+    } catch (err) {
+      console.error(err);
+      setIsAuthenticated(true);
+    }
+  };
+
+  useEffect(() => {
     fetchSession();
     fetchLogs();
     fetchAdminData();
@@ -365,6 +397,19 @@ function App() {
     return "bg-primary text-on-primary";
   };
 
+  if (!isAuthenticated) {
+    if (authRoute === "/forgot-password") {
+      return <ForgotPassword navigate={(r) => window.location.hash = r} />;
+    }
+    if (authRoute === "/google-login") {
+      return <GoogleLogin navigate={(r) => window.location.hash = r} />;
+    }
+    if (authRoute === "/google-password") {
+      return <GooglePassword onLoginSuccess={handleLoginSuccess} />;
+    }
+    return <MainLogin navigate={(r) => window.location.hash = r} onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200 ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
       {session.is_locked && <div className="crt-overlay"></div>}
@@ -437,6 +482,17 @@ function App() {
             <div className={`w-9 h-9 rounded-full flex items-center justify-center bg-primary text-[#dec9e9] shadow-sm border border-outline`}>
               <span className="material-symbols-outlined text-[18px]">engineering</span>
             </div>
+            <button 
+              onClick={() => {
+                localStorage.removeItem("loggedUser");
+                localStorage.removeItem("loginRole");
+                setIsAuthenticated(false);
+              }}
+              className="text-[#dec9e9] hover:text-white hover:bg-[#7251b5] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 ml-1"
+              title="Logout"
+            >
+              <span className="material-symbols-outlined text-[20px]">logout</span>
+            </button>
           </div>
         </div>
       </header>

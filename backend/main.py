@@ -64,6 +64,27 @@ def switch_role(req: SwitchRoleRequest):
     write_audit_log("INFO", "IAM_Gateway", f"Session switched to {req.user_id} with role {user['role']}")
     return session_state
 
+class LoginRequest(BaseModel):
+    email: str
+    role: str
+
+@app.post("/api/auth/login")
+def api_login(req: LoginRequest):
+    role_map = {
+        "CEO": ("CEO_Alpha", "Executive", "EXEC"),
+        "HR": ("HR_Lead", "HR_Manager", "HR"),
+        "EMPLOYEE": ("Node_02", "Standard_Eng", "ENG")
+    }
+    
+    user_info = role_map.get(req.role, ("Node_02", "Standard_Eng", "ENG"))
+    session_state["user_id"] = user_info[0]
+    session_state["role"] = user_info[1]
+    session_state["clearance"] = user_info[2]
+    session_state["is_locked"] = False
+    
+    write_audit_log("INFO", "IAM_Gateway", f"User {req.email} successfully logged in as {req.role}")
+    return session_state
+
 @app.post("/api/query")
 def execute_query(req: QueryRequest):
     if session_state["is_locked"]:
