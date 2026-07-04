@@ -56,10 +56,11 @@ module.exports = {
         "secondary-container": "var(--secondary-container)"
       },
       borderRadius: {
-        "DEFAULT": "0.125rem",
-        "lg": "0.25rem",
-        "xl": "0.5rem",
-        "full": "0.75rem"
+        "DEFAULT": "0.375rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "2xl": "1rem",
+        "full": "9999px"
       },
       spacing: {
         "margin-sm": "8px",
@@ -71,12 +72,12 @@ module.exports = {
         "margin-xs": "4px"
       },
       fontFamily: {
-        "body-sm": ["JetBrains Mono"],
-        "headline-md": ["Hanken Grotesk"],
-        "label-md": ["Hanken Grotesk"],
-        "headline-lg": ["Hanken Grotesk"],
-        "body-md": ["JetBrains Mono"],
-        "mono-data": ["JetBrains Mono"]
+        "body-sm": ["Inter", "sans-serif"],
+        "headline-md": ["Inter", "sans-serif"],
+        "label-md": ["Inter", "sans-serif"],
+        "headline-lg": ["Inter", "sans-serif"],
+        "body-md": ["Inter", "sans-serif"],
+        "mono-data": ["JetBrains Mono", "monospace"]
       },
       fontSize: {
         "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],

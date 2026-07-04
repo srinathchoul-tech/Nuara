@@ -14,9 +14,8 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [sidebarWidth, setSidebarWidth] = useState(256);
-  const [ledgerWidth, setLedgerWidth] = useState(320);
-  const [logsHeight, setLogsHeight] = useState(192);
+  const [sidebarWidth, setSidebarWidth] = useState(240);
+  const [ledgerWidth, setLedgerWidth] = useState(360);
 
   const [expandedFolders, setExpandedFolders] = useState({
     drives: true,
@@ -27,18 +26,8 @@ function App() {
 
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setTheme] = useState("dark");
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    localStorage.setItem("theme", nextTheme);
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
+  const [showLogs, setShowLogs] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const [dbDocs, setDbDocs] = useState([]);
   const [newDoc, setNewDoc] = useState({
@@ -49,6 +38,7 @@ function App() {
     url: ""
   });
   const [gapAnalysis, setGapAnalysis] = useState([]);
+  const [theme, setTheme] = useState("dark");
 
   const logEndRef = useRef(null);
 
@@ -104,6 +94,7 @@ function App() {
       setSession(data);
       setResults(null);
       setQuery("");
+      setShowUserMenu(false);
       fetchLogs();
     } catch (err) {
       console.error(err);
@@ -232,7 +223,7 @@ function App() {
   const startResizeSidebar = (e) => {
     e.preventDefault();
     const handleMouseMove = (moveEvent) => {
-      const newWidth = Math.max(180, Math.min(400, moveEvent.clientX));
+      const newWidth = Math.max(180, Math.min(320, moveEvent.clientX));
       setSidebarWidth(newWidth);
     };
     const handleMouseUp = () => {
@@ -246,22 +237,8 @@ function App() {
   const startResizeLedger = (e) => {
     e.preventDefault();
     const handleMouseMove = (moveEvent) => {
-      const newWidth = Math.max(240, Math.min(480, window.innerWidth - moveEvent.clientX));
+      const newWidth = Math.max(280, Math.min(540, window.innerWidth - moveEvent.clientX));
       setLedgerWidth(newWidth);
-    };
-    const handleMouseUp = () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
-
-  const startResizeLogs = (e) => {
-    e.preventDefault();
-    const handleMouseMove = (moveEvent) => {
-      const newHeight = Math.max(100, Math.min(350, window.innerHeight - moveEvent.clientY));
-      setLogsHeight(newHeight);
     };
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
@@ -278,12 +255,23 @@ function App() {
     }));
   };
 
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
   useEffect(() => {
     fetchSession();
     fetchLogs();
     fetchAdminData();
     const interval = setInterval(fetchLogs, 3000);
-    
+
     const savedTheme = localStorage.getItem("theme") || "dark";
     setTheme(savedTheme);
     if (savedTheme === "dark") {
@@ -311,59 +299,99 @@ function App() {
     setQuery(queryText);
   };
 
+  const getProfileAvatarSymbol = (clearance) => {
+    if (clearance === "EXEC") return "admin_panel_settings";
+    if (clearance === "HR") return "badge";
+    return "engineering";
+  };
+
+  const getProfileBadgeColor = (clearance) => {
+    if (clearance === "EXEC") return "bg-rose-500 text-white";
+    if (clearance === "HR") return "bg-amber-500 text-white";
+    return "bg-blue-600 text-white";
+  };
+
   return (
-    <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
+    <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200 ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
       {session.is_locked && <div className="crt-overlay"></div>}
 
-      <header className="bg-surface border-b border-outline-variant flex justify-between items-center px-panel-padding h-12 w-full z-50 shrink-0">
+      <header className="bg-surface border-b border-outline px-6 h-14 w-full z-50 shrink-0 flex justify-between items-center">
         <div className="flex items-center gap-4">
           <span className="font-headline-md text-headline-md font-bold text-primary tracking-tighter uppercase leading-none">Nuara</span>
           {session.is_locked && (
             <>
-              <div className="h-4 w-px bg-outline-variant mx-2"></div>
-              <span className="font-mono-data text-mono-data text-error uppercase tracking-widest flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+              <div className="h-4 w-px bg-outline mx-2"></div>
+              <span className="font-mono-data text-mono-data text-error uppercase tracking-widest flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
                 SYSTEM_LOCKDOWN_ACTIVE
               </span>
             </>
           )}
         </div>
 
-        <div className="flex-1 flex justify-end items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 bg-surface-variant p-1 rounded-lg">
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 relative flex items-center justify-center"
+              className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">security</span>
-              {session.is_locked && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-error rounded-full"></span>}
             </button>
             <button 
               onClick={toggleTheme}
-              className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center"
+              className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {theme === "dark" ? "light_mode" : "dark_mode"}
               </span>
             </button>
-            <button className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px]">terminal</span>
-            </button>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className="text-on-surface-variant hover:bg-surface-variant transition-colors p-1.5 cursor-pointer active:opacity-80 flex items-center justify-center"
+              className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </button>
           </div>
-          <div className={`h-8 w-8 bg-surface-variant border flex items-center justify-center overflow-hidden relative ${session.is_locked ? "border-error grayscale" : "border-outline-variant"}`}>
-            <img 
-              alt="User profile pic" 
-              className="w-full h-full object-cover opacity-80" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxLZcDZORcOiyFw4RwzqdyHu23osZeSSd-vfKB3WsK0QuRUYCbC1R39ms7GfXz5H7t0CXE0K7FfO_0PPfe32vOwkCOv5EGcvDJENkAACxGtXpGG3xhv48VhgqV8KiIsMTqvfzKoYxdoCNEBcnvFfm_5gCZAknJLPMuQBVzvK9v_W3FstCBHUCQqx2oCZny7JXxFtDu8JT--8kJtm1T0UmitVkDnlR_BJi_MEyTuUbWF-WtAjZ0WJIy4yA2l1fr9zkX0muHKd40_g"
-            />
-            {session.is_locked && <div className="absolute inset-0 bg-error/20 mix-blend-overlay"></div>}
-            {!session.is_locked && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary border-2 border-surface rounded-full"></div>}
+          
+          <div className="h-8 w-px bg-outline"></div>
+
+          <div className="relative">
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-outline hover:border-primary bg-surface transition-all cursor-pointer select-none active:scale-95"
+            >
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getProfileBadgeColor(session.clearance)}`}>
+                <span className="material-symbols-outlined text-[14px]">
+                  {getProfileAvatarSymbol(session.clearance)}
+                </span>
+              </div>
+              <span className="font-label-md text-on-surface font-semibold text-[13px]">{session.role}</span>
+              <span className="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
+            </button>
+            
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-surface border border-outline rounded-xl shadow-lg z-50 py-1.5 overflow-hidden">
+                <div className="px-3 py-1.5 text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Switch clearance role</div>
+                <button 
+                  onClick={() => switchUser("Node_02")}
+                  className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-surface-variant font-label-md text-[13px] ${session.user_id === "Node_02" ? "text-primary font-semibold" : "text-on-surface"}`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">engineering</span> Software Engineer
+                </button>
+                <button 
+                  onClick={() => switchUser("HR_Lead")}
+                  className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-surface-variant font-label-md text-[13px] ${session.user_id === "HR_Lead" ? "text-primary font-semibold" : "text-on-surface"}`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">badge</span> HR Lead
+                </button>
+                <button 
+                  onClick={() => switchUser("CEO_Alpha")}
+                  className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-surface-variant font-label-md text-[13px] ${session.user_id === "CEO_Alpha" ? "text-primary font-semibold" : "text-on-surface"}`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> CEO Executive
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -371,40 +399,33 @@ function App() {
       <main className="flex-1 flex overflow-hidden">
         <nav 
           style={{ width: `${sidebarWidth}px` }} 
-          className="bg-surface-container-low border-r border-outline-variant flex flex-col h-full z-40 shrink-0"
+          className="bg-surface border-r border-outline flex flex-col h-full z-40 shrink-0"
         >
-          <div className="p-panel-padding border-b border-outline-variant">
-            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-1">Nuara Core</div>
-            <div className={`font-mono-data text-mono-data ${session.is_locked ? "text-error" : "text-primary"}`}>
-              {session.is_locked ? "Auth: INVALIDATED" : `Clearance: ${session.clearance}`}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-panel-padding">
-            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-4">Data Source Vault</div>
-            <ul className="space-y-2 ml-1">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant font-bold px-2">Data Vault</div>
+            <ul className="space-y-1">
               <li className="flex flex-col">
                 <div 
                   onClick={() => toggleFolder("drives")}
-                  className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1"
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.drives ? "text-primary font-medium" : "text-on-surface-variant"}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-outline-variant text-[16px]">
+                    <span className="material-symbols-outlined text-[18px]">
                       {expandedFolders.drives ? "folder_open" : "folder"}
                     </span>
-                    <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Drives</span>
+                    <span className="text-[13px]">Drives</span>
                   </div>
-                  <span className="bg-surface-container px-1 py-0.5 text-[10px] text-tertiary border border-outline-variant">PUBLIC</span>
+                  <span className="text-[10px] opacity-75 font-semibold font-mono-data">PUBLIC</span>
                 </div>
                 {expandedFolders.drives && (
-                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                  <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
                     {dbDocs.filter(d => d.source_type === "Drive").map(doc => (
                       <li 
                         key={doc.id}
                         onClick={() => handleFileClick(doc.id)}
-                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
+                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer py-1.5 px-2 rounded-md hover:bg-surface-variant transition-all text-[12px] truncate"
                       >
-                        <span className="material-symbols-outlined text-[14px]">description</span> 
+                        <span className="material-symbols-outlined text-[14px] shrink-0">description</span> 
                         <span className="truncate">{doc.name}</span>
                       </li>
                     ))}
@@ -412,96 +433,96 @@ function App() {
                 )}
               </li>
 
-              <li className="flex flex-col mt-2">
+              <li className="flex flex-col mt-1">
                 <div 
                   onClick={() => toggleFolder("wikis")}
-                  className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1"
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.wikis ? "text-primary font-medium" : "text-on-surface-variant"}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-outline-variant text-[16px]">
+                    <span className="material-symbols-outlined text-[18px]">
                       {expandedFolders.wikis ? "folder_open" : "folder"}
                     </span>
-                    <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Wikis</span>
+                    <span className="text-[13px]">Wikis</span>
                   </div>
-                  <span className="bg-surface-container px-1 py-0.5 text-[10px] text-primary border border-outline-variant">ENG</span>
+                  <span className="text-[10px] opacity-75 font-semibold font-mono-data">ENG</span>
                 </div>
                 {expandedFolders.wikis && (
-                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                  <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
                     {dbDocs.filter(d => d.source_type === "Wiki").map(doc => (
                       <li 
                         key={doc.id}
                         onClick={() => handleFileClick(doc.id)}
-                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
+                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer py-1.5 px-2 rounded-md hover:bg-surface-variant transition-all text-[12px] truncate"
                       >
-                        <span className="material-symbols-outlined text-[14px]">description</span> 
+                        <span className="material-symbols-outlined text-[14px] shrink-0">description</span> 
                         <span className="truncate">{doc.name}</span>
                       </li>
                     ))}
                     {dbDocs.filter(d => d.source_type === "Wiki").length === 0 && (
-                      <li className="text-[10px] text-outline p-1 italic">No records</li>
+                      <li className="text-[11px] text-on-surface-variant/60 py-1.5 px-2 italic">No records</li>
                     )}
                   </ul>
                 )}
               </li>
 
-              <li className="flex flex-col mt-2">
+              <li className="flex flex-col mt-1">
                 <div 
                   onClick={() => toggleFolder("tickets")}
-                  className="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high p-1"
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.tickets ? "text-primary font-medium" : "text-on-surface-variant"}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-outline-variant text-[16px]">
+                    <span className="material-symbols-outlined text-[18px]">
                       {expandedFolders.tickets ? "folder_open" : "folder"}
                     </span>
-                    <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Tickets</span>
+                    <span className="text-[13px]">Tickets</span>
                   </div>
-                  <span className="bg-surface-container px-1 py-0.5 text-[10px] text-error border border-outline-variant">HR</span>
+                  <span className="text-[10px] opacity-75 font-semibold font-mono-data">HR</span>
                 </div>
                 {expandedFolders.tickets && (
-                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                  <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
                     {dbDocs.filter(d => d.source_type === "Ticket").map(doc => (
                       <li 
                         key={doc.id}
                         onClick={() => handleFileClick(doc.id)}
-                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer p-1 text-[11px]"
+                        className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer py-1.5 px-2 rounded-md hover:bg-surface-variant transition-all text-[12px] truncate"
                       >
-                        <span className="material-symbols-outlined text-[14px]">confirmation_number</span> 
+                        <span className="material-symbols-outlined text-[14px] shrink-0">confirmation_number</span> 
                         <span className="truncate">{doc.name}</span>
                       </li>
                     ))}
                     {dbDocs.filter(d => d.source_type === "Ticket").length === 0 && (
-                      <li className="text-[10px] text-outline p-1 italic">No records</li>
+                      <li className="text-[11px] text-on-surface-variant/60 py-1.5 px-2 italic">No records</li>
                     )}
                   </ul>
                 )}
               </li>
 
-              <li className="flex flex-col mt-2">
+              <li className="flex flex-col mt-1">
                 <div 
                   onClick={() => toggleFolder("chats")}
-                  className={`flex items-center justify-between group cursor-pointer p-1 ${session.is_locked ? "bg-error/10 border-l-2 border-error" : "bg-secondary-container border-l-2 border-primary"}`}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-surface-variant transition-all ${expandedFolders.chats ? "text-primary font-medium" : "text-on-surface-variant"}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`material-symbols-outlined text-[16px] ${session.is_locked ? "text-error" : "text-primary"}`}>
+                    <span className="material-symbols-outlined text-[18px]">
                       {expandedFolders.chats ? "folder_open" : "folder"}
                     </span>
-                    <span className={`font-body-sm text-body-sm ${session.is_locked ? "text-error" : "text-primary"}`}>Chat Logs</span>
+                    <span className="text-[13px]">Chat Logs</span>
                   </div>
-                  <span className={`bg-surface-container px-1 py-0.5 text-[10px] border ${session.is_locked ? "text-error border-error" : "text-error border-outline"}`}>EXEC</span>
+                  <span className="text-[10px] opacity-75 font-semibold font-mono-data">EXEC</span>
                 </div>
                 {expandedFolders.chats && (
-                  <ul className="ml-6 mt-1 space-y-1 tree-line">
+                  <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
                     {dbDocs.filter(d => d.source_type === "Chat").map(doc => (
                       <li 
                         key={doc.id}
                         onClick={() => handleFileClick(doc.id)}
-                        className={`flex items-center gap-2 cursor-pointer p-1 text-[11px] border rounded-sm ${
+                        className={`flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded-md hover:bg-surface-variant transition-all text-[12px] truncate ${
                           doc.access_level === "HR" || doc.access_level === "EXEC"
-                            ? (session.is_locked ? "text-error bg-error/10 border-error" : "text-on-surface-variant border-transparent")
-                            : "text-primary border-transparent"
+                            ? (session.is_locked ? "text-error font-medium" : "")
+                            : "text-primary"
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[14px]">
+                        <span className="material-symbols-outlined text-[14px] shrink-0">
                           {doc.access_level === "HR" || doc.access_level === "EXEC" ? "lock" : "chat"}
                         </span> 
                         <span className="truncate">{doc.name}</span>
@@ -513,46 +534,17 @@ function App() {
             </ul>
           </div>
 
-          <div className="p-panel-padding border-t border-outline-variant bg-surface-dim">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-on-surface-variant uppercase tracking-wider">Role Switcher</span>
-              <span className="material-symbols-outlined text-primary text-[14px]">swap_vert</span>
-            </div>
-            <div className="space-y-1.5">
-              <div 
-                onClick={() => switchUser("Node_02")}
-                className={`border p-2 flex items-center justify-between cursor-pointer transition-colors ${session.user_id === "Node_02" ? "border-primary bg-surface-container-high" : "border-outline-variant hover:border-primary"}`}
-              >
-                <div className="flex flex-col">
-                  <span className="font-mono-data text-mono-data text-on-surface text-[12px]">Software Engineer</span>
-                  <span className="text-[10px] text-primary opacity-80">Node_02 // Active</span>
-                </div>
-              </div>
-              <div 
-                onClick={() => switchUser("HR_Lead")}
-                className={`border p-2 flex items-center justify-between cursor-pointer transition-colors ${session.user_id === "HR_Lead" ? "border-primary bg-surface-container-high" : "border-outline-variant hover:border-primary"}`}
-              >
-                <div className="flex flex-col">
-                  <span className="font-mono-data text-mono-data text-on-surface text-[12px]">HR Lead</span>
-                  <span className="text-[10px] text-tertiary opacity-80">HR_Manager // Active</span>
-                </div>
-              </div>
-              <div 
-                onClick={() => switchUser("CEO_Alpha")}
-                className={`border p-2 flex items-center justify-between cursor-pointer transition-colors ${session.user_id === "CEO_Alpha" ? "border-primary bg-surface-container-high" : "border-outline-variant hover:border-primary"}`}
-              >
-                <div className="flex flex-col">
-                  <span className="font-mono-data text-mono-data text-on-surface text-[12px]">CEO Executive</span>
-                  <span className="text-[10px] text-error opacity-80">Executive // Active</span>
-                </div>
-              </div>
+          <div className="p-4 border-t border-outline bg-surface-dim">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-outline text-xs">
+              <span className="material-symbols-outlined text-primary text-[16px]">verified_user</span>
+              <span className="text-on-surface-variant font-medium">Compliance Enforcer</span>
             </div>
             {session.is_locked && (
               <button 
                 onClick={handleReset}
-                className="w-full mt-3 bg-error-container/20 border border-error text-error font-label-md text-label-md uppercase tracking-widest py-2 hover:bg-error-container hover:text-on-error-container transition-colors shadow-[0_0_10px_rgba(147,0,10,0.5)] flex items-center justify-center gap-1"
+                className="w-full mt-3 bg-error text-white font-label-md text-label-md uppercase tracking-wider py-2 rounded-lg hover:bg-red-600 transition-colors shadow-md flex items-center justify-center gap-1 active:scale-95 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[14px]">warning</span> ACKNOWLEDGE_ALERT
+                <span className="material-symbols-outlined text-[16px]">warning</span> RESET DISPATCH
               </button>
             )}
           </div>
@@ -560,279 +552,246 @@ function App() {
 
         <div 
           onMouseDown={startResizeSidebar}
-          className="w-1 bg-outline-variant hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0" 
+          className="w-1 hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0 bg-outline" 
         />
 
-        <section className="flex-1 bg-surface-container-lowest flex flex-col min-w-0">
-          <div className="p-panel-padding border-b border-outline-variant bg-surface-container-low flex flex-col gap-2">
-            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px]">terminal</span> Command Center
+        <section className="flex-1 bg-background flex flex-col min-w-0 p-6 overflow-y-auto relative">
+          
+          <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
+            
+            <div className="bg-surface shadow-sm rounded-2xl p-4 border border-outline flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-[24px]">search</span>
+              <form onSubmit={handleQuery} className="flex-1 flex items-center gap-3">
+                <input 
+                  className={`w-full bg-transparent border-none outline-none font-body-md text-on-surface placeholder:text-on-surface-variant/80 focus:ring-0 p-0 text-[15px]`}
+                  placeholder={session.is_locked ? "SYSTEM LOCKDOWN ACTIVE: OVERRIDE DISPATCH" : "Search files, tickets, wikis or ask Nuara planner..."}
+                  type="text" 
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  disabled={session.is_locked}
+                />
+                <button 
+                  type="submit" 
+                  disabled={session.is_locked || isLoading}
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer active:scale-95 ${
+                    session.is_locked 
+                      ? "bg-red-500/20 text-red-400 cursor-not-allowed border border-red-500/30" 
+                      : "bg-primary text-on-primary hover:bg-blue-700 shadow-sm"
+                  }`}
+                >
+                  {isLoading ? "RUNNING..." : "QUERY"}
+                </button>
+              </form>
             </div>
-            <form onSubmit={handleQuery} className="flex items-center border-b border-outline-variant focus-within:border-primary transition-colors py-1">
-              <span className="text-primary mr-2 font-mono-data text-mono-data">&gt;</span>
-              <input 
-                className={`w-full bg-transparent border-none outline-none font-mono-data text-mono-data placeholder:text-on-surface-variant focus:ring-0 p-0 ${session.is_locked ? "text-error" : "text-on-surface"}`}
-                placeholder={session.is_locked ? "SYS_HALT: OVERRIDE_REQUIRED" : "QUERY: Search corporate memory graph..."}
-                type="text" 
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                disabled={session.is_locked}
-              />
-              <button 
-                type="submit" 
-                disabled={session.is_locked || isLoading}
-                className={`px-2 py-0.5 text-[10px] font-bold transition-all ${session.is_locked ? "bg-error/30 text-error-container border border-error cursor-not-allowed" : "bg-primary text-on-primary hover:bg-primary-container cursor-pointer"}`}
-              >
-                {isLoading ? "RUNNING" : "EXECUTE"}
-              </button>
-            </form>
-          </div>
 
-          <div className="flex-1 p-panel-padding overflow-y-auto flex flex-col gap-4">
-            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant">Multi-Agent Orchestration Chain</div>
-            <div className="flex flex-col gap-3 relative">
-              <div className="absolute left-[15px] top-4 bottom-4 w-px bg-outline-variant z-0"></div>
+            {results && (
+              <div className="bg-surface shadow-sm rounded-2xl border border-outline p-6 flex flex-col gap-6">
+                
+                <div>
+                  <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Agent Orchestration Path</div>
+                  <div className="flex items-center gap-2 select-none relative">
+                    <div className="absolute top-[15px] left-4 right-4 h-0.5 bg-outline z-0"></div>
+                    
+                    <div className="flex-1 flex flex-col items-center text-center z-10 relative">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        results ? "bg-primary border-primary text-on-primary" : "bg-surface border-outline text-on-surface-variant"
+                      }`}>
+                        <span className="material-symbols-outlined text-[16px]">psychology</span>
+                      </div>
+                      <span className="text-[11px] font-semibold mt-1 text-on-surface">Planning</span>
+                      <span className="text-[9px] text-on-surface-variant/75 font-mono-data">Success</span>
+                    </div>
 
-              <div className={`border p-3 flex gap-3 relative z-10 transition-all ${
-                results && results.status !== "breach" 
-                  ? "bg-surface-container-low border-outline-variant opacity-70" 
-                  : "bg-surface-container-low border-outline-variant opacity-50"
-              }`}>
-                <div className="w-8 h-8 rounded-none bg-surface border border-outline-variant flex items-center justify-center shrink-0">
-                  {results ? (
-                    <span className="material-symbols-outlined text-primary text-[18px]">check</span>
+                    <div className="flex-1 flex flex-col items-center text-center z-10 relative">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        isLoading 
+                          ? "bg-surface border-primary text-primary animate-pulse" 
+                          : results.status === "breach" 
+                            ? "bg-error-container border-error text-error" 
+                            : results 
+                              ? "bg-primary border-primary text-on-primary" 
+                              : "bg-surface border-outline text-on-surface-variant"
+                      }`}>
+                        <span className="material-symbols-outlined text-[16px]">
+                          {results.status === "breach" ? "gpp_bad" : "hub"}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-semibold mt-1 text-on-surface">Retrieval</span>
+                      <span className={`text-[9px] font-mono-data ${results.status === "breach" ? "text-error font-bold" : "text-on-surface-variant/75"}`}>
+                        {results.status === "breach" ? "Blocked" : "Completed"}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 flex flex-col items-center text-center z-10 relative">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        results.status === "breach" 
+                          ? "bg-surface border-outline text-on-surface-variant/40" 
+                          : results 
+                            ? "bg-primary border-primary text-on-primary" 
+                            : "bg-surface border-outline text-on-surface-variant"
+                      }`}>
+                        <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
+                      </div>
+                      <span className="text-[11px] font-semibold mt-1 text-on-surface">Synthesis</span>
+                      <span className="text-[9px] text-on-surface-variant/75 font-mono-data">
+                        {results.status === "breach" ? "Halted" : "Success"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-px bg-outline"></div>
+
+                <div>
+                  {results.status === "breach" ? (
+                    <div className="border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50 p-5 rounded-xl flex items-start gap-4">
+                      <span className="material-symbols-outlined text-red-500 text-[28px] shrink-0">dangerous</span>
+                      <div>
+                        <h4 className="font-bold text-red-700 dark:text-red-400 text-[14px] uppercase tracking-wide">Security Override Isolation</h4>
+                        <p className="text-[13px] text-red-900/80 dark:text-red-300 mt-1 leading-relaxed">
+                          Authorization level check rejected: Standard access role lacks validation credentials to resolve restricted entity database clusters. Connection terminated.
+                        </p>
+                      </div>
+                    </div>
                   ) : (
-                    <span className="material-symbols-outlined text-outline-variant text-[18px]">pending</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-mono-data text-mono-data text-on-surface">Planner Agent</span>
-                    {results && <span className="text-[10px] text-outline">12ms</span>}
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant">
-                    {results 
-                      ? (results.status === "breach" ? "Deconstructed query into 2 sub-tasks. Security context resolved." : "Deconstructed query into 3 sub-tasks. Required sources identified.")
-                      : "Awaiting query payload to begin planning sequence."
-                    }
-                  </div>
-                </div>
-              </div>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <h4 className="font-bold text-primary text-[11px] uppercase tracking-wider mb-1">Answer Synthesis</h4>
+                        <p className="text-on-surface font-body-md text-[14px] leading-relaxed select-text">
+                          {results.documents && results.documents[0] ? results.documents[0].content : "No answers returned. Query terms returned zero vector index mappings."}
+                        </p>
+                      </div>
 
-              <div className={`border p-3 flex gap-3 relative z-10 transition-all ${
-                isLoading 
-                  ? "bg-surface border-primary shadow-[0_0_15px_rgba(76,215,246,0.1)]" 
-                  : results && results.status === "breach" 
-                    ? "bg-error-container/10 border-error" 
-                    : results 
-                      ? "bg-surface-container-low border-outline-variant opacity-70" 
-                      : "bg-surface-container-low border-outline-variant opacity-50"
-              }`}>
-                <div className={`w-8 h-8 rounded-none bg-surface border flex items-center justify-center shrink-0 ${isLoading ? "border-primary" : results && results.status === "breach" ? "border-error" : "border-outline-variant"}`}>
-                  {isLoading ? (
-                    <span className="material-symbols-outlined text-primary text-[18px] animate-spin">refresh</span>
-                  ) : results && results.status === "breach" ? (
-                    <span className="material-symbols-outlined text-error text-[18px]">gpp_bad</span>
-                  ) : results ? (
-                    <span className="material-symbols-outlined text-primary text-[18px]">check</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-outline-variant text-[18px]">pending</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className={`font-mono-data text-mono-data ${isLoading ? "text-primary" : results && results.status === "breach" ? "text-error" : "text-on-surface"}`}>
-                      Knowledge Graph Retrieval Engine
-                    </span>
-                    {isLoading && <span className="text-[10px] text-primary animate-pulse">Running...</span>}
-                    {results && results.status === "breach" && <span className="text-[10px] text-error font-bold">BLOCKED</span>}
-                    {results && results.status !== "breach" && <span className="text-[10px] text-outline">450ms</span>}
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant">
-                    {isLoading ? "Traversing graph edges within [Drives, Wikis, Tickets, Chat]..." 
-                      : results && results.status === "breach" ? "Traversing graph edges... Access Denied: User role lacks clearance."
-                      : results ? "Traversing graph edges completed. Found matching nodes." 
-                      : "Awaiting planning schema to resolve connections."
-                    }
-                  </div>
-                  {results && results.status !== "breach" && results.documents && (
-                    <div className="bg-surface-container-lowest border border-outline-variant p-2 text-[10px] font-mono-data text-tertiary mt-2">
-                      <div>&gt; match (n:Document)-[:MENTIONS]-&gt;(e:Concept)</div>
-                      <div>&gt; where n.access_level &lt;= '{session.clearance}'</div>
-                      <div className="text-primary">&gt; [Stream active: {results.documents.length} nodes found]</div>
+                      {results.documents && results.documents.length > 0 && (
+                        <div>
+                          <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Verified Citations</div>
+                          <div className="flex flex-wrap gap-2">
+                            {results.documents.map((doc) => (
+                              <div 
+                                key={doc.id}
+                                onClick={() => handleFileClick(doc.id)}
+                                className="px-3 py-1.5 bg-surface-variant hover:bg-outline border border-outline rounded-lg flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 text-[11px] font-semibold text-on-surface"
+                              >
+                                <span className="material-symbols-outlined text-[13px] text-primary">description</span>
+                                <span>{doc.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              </div>
-
-              <div className={`border p-3 flex gap-3 relative z-10 transition-all ${
-                results && results.status !== "breach" 
-                  ? "bg-surface-container-low border-outline-variant opacity-70" 
-                  : "bg-surface-container-low border-outline-variant opacity-50"
-              }`}>
-                <div className="w-8 h-8 rounded-none bg-surface border border-outline-variant flex items-center justify-center shrink-0">
-                  {results && results.status === "breach" ? (
-                    <span className="material-symbols-outlined text-outline-variant text-[18px]">cancel</span>
-                  ) : results ? (
-                    <span className="material-symbols-outlined text-primary text-[18px]">check</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-outline-variant text-[18px]">pending</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-mono-data text-mono-data text-on-surface-variant">Synthesis Agent</span>
-                    {results && results.status !== "breach" && <span className="text-[10px] text-outline">180ms</span>}
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant">
-                    {results && results.status === "breach" ? "Execution halted due to security violation exception."
-                      : results ? "Awaiting retrieval payload... Final response synthesized."
-                      : "Awaiting retrieval payload to compile final response."
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {results && results.status !== "breach" && results.documents && results.documents.length > 0 && (
-              <div className="mt-4 border border-outline-variant bg-surface-container-low p-4">
-                <h3 className="text-primary font-label-md uppercase tracking-wider mb-2">Synthesized Answer</h3>
-                <div className="text-on-surface font-body-md leading-relaxed">
-                  {results.documents[0].content} 
-                  <span className="text-primary font-bold ml-1 text-xs">
-                    [{results.documents[0].name}]
-                  </span>
                 </div>
               </div>
             )}
           </div>
 
-          <div 
-            onMouseDown={startResizeLogs}
-            className="h-1 w-full bg-outline-variant hover:bg-primary cursor-row-resize transition-colors duration-150 z-50 shrink-0" 
-          />
-
-          <div 
-            style={{ height: `${logsHeight}px` }} 
-            className="border-t border-outline-variant bg-[#0a0e18] flex flex-col shrink-0"
-          >
-            <div className="bg-surface-container-high px-2 py-1 flex items-center justify-between border-b border-outline-variant">
-              <span className="text-[10px] font-mono-data text-on-surface-variant">system_logs.json</span>
-              <span className="material-symbols-outlined text-[14px] text-outline-variant hover:text-primary cursor-pointer">open_in_full</span>
-            </div>
-            <div className="p-2 overflow-y-auto text-[11px] font-mono-data leading-relaxed text-on-surface-variant flex flex-col gap-0.5">
-              {logs.map((log) => (
-                <div 
-                  key={log.id} 
-                  className={`flex gap-4 ${
-                    log.level === "WARN" ? "text-error bg-error-container/5 -mx-2 px-2 border-l border-error" : 
-                    log.level === "DEBUG" ? "text-tertiary" : ""
-                  }`}
-                >
-                  <span className="opacity-50 select-none whitespace-nowrap">{log.timestamp.split("T")[1]?.slice(0, 8) || log.timestamp}</span>
-                  <span className="text-secondary">[{log.component}]</span>
-                  <span>{log.msg}</span>
-                </div>
-              ))}
-              <div ref={logEndRef} />
-            </div>
+          <div className="absolute bottom-6 right-6 z-40">
+            <button 
+              onClick={() => setShowLogs(!showLogs)}
+              className="px-4 py-2 bg-surface hover:bg-surface-variant border border-outline rounded-xl text-on-surface shadow-sm text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                {showLogs ? "keyboard_arrow_down" : "keyboard_arrow_up"}
+              </span>
+              <span>View Developer Logs</span>
+            </button>
           </div>
+
+          {showLogs && (
+            <div className="absolute bottom-16 right-6 left-6 max-w-4xl mx-auto z-45 bg-[#090d16] border border-outline rounded-2xl shadow-xl h-56 flex flex-col overflow-hidden animate-slide-up">
+              <div className="bg-surface-container-high px-4 py-2.5 flex items-center justify-between border-b border-outline">
+                <span className="text-[11px] font-bold text-on-surface-variant font-mono-data">system_logs.json</span>
+                <button 
+                  onClick={() => setShowLogs(false)}
+                  className="text-on-surface-variant hover:text-primary cursor-pointer flex items-center"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
+              <div className="p-3 overflow-y-auto text-[11px] font-mono-data leading-relaxed text-slate-400 flex flex-col gap-0.5 select-text">
+                {logs.map((log) => (
+                  <div 
+                    key={log.id} 
+                    className={`flex gap-4 ${
+                      log.level === "WARN" ? "text-rose-400 bg-rose-500/5 -mx-3 px-3 border-l-2 border-rose-500" : 
+                      log.level === "DEBUG" ? "text-amber-400" : ""
+                    }`}
+                  >
+                    <span className="opacity-40 select-none whitespace-nowrap">{log.timestamp.split("T")[1]?.slice(0, 8) || log.timestamp}</span>
+                    <span className="text-blue-400/80">[{log.component}]</span>
+                    <span>{log.msg}</span>
+                  </div>
+                ))}
+                <div ref={logEndRef} />
+              </div>
+            </div>
+          )}
         </section>
 
         <div 
           onMouseDown={startResizeLedger}
-          className="w-1 bg-outline-variant hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0" 
+          className="w-1 hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0 bg-outline" 
         />
 
         <aside 
           style={{ width: `${ledgerWidth}px` }} 
-          className="bg-surface-container-low flex flex-col z-30 shrink-0 relative"
+          className="bg-surface border-l border-outline flex flex-col z-30 shrink-0 relative p-6"
         >
-          {session.is_locked ? (
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-surface-container-lowest/80 backdrop-blur-md border-l border-error/50">
-              <div aria-hidden="true" className="absolute inset-0 opacity-10 font-mono-data text-[8px] text-error overflow-hidden break-all leading-none z-0" style={{ userSelect: "none" }}>
+          {session.is_locked && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-surface/90 backdrop-blur-md">
+              <div aria-hidden="true" className="absolute inset-0 opacity-5 font-mono-data text-[7px] text-error overflow-hidden break-all leading-none z-0 select-none">
                 01000100 01000101 01001110 01001001 01000101 01000100 00100000 01000001 01000011 01000011 01000101 01010011 01010011 00100000 01010110 01001001 01001111 01001100 01000001 01010100 01001001 01001111 01011010
               </div>
-              <div className="relative z-10 text-center border border-error bg-background p-6 shadow-[0_0_30px_rgba(147,0,10,0.2)]">
-                <span className="material-symbols-outlined text-5xl text-error mb-4">gpp_bad</span>
-                <h2 className="font-headline-md text-error tracking-widest uppercase mb-2">RESTRICTED ZONE</h2>
-                <div className="font-mono-data text-error-container text-xs mb-4">ERR_CODE: PERMISSION_DENIED_0x403</div>
-                <div className="w-full h-px bg-error/30 my-4"></div>
-                <p className="font-body-sm text-on-surface-variant text-center opacity-80 mb-6">
-                  Insight Ledger visualization unavailable. The requested knowledge graph nodes require Executive or HR clearance.
+              <div className="relative z-10 text-center p-4 border border-outline rounded-2xl bg-background shadow-lg max-w-[280px]">
+                <span className="material-symbols-outlined text-4xl text-error mb-2">lock</span>
+                <h2 className="font-headline-md text-on-surface tracking-wide uppercase text-sm font-bold mb-1">Restricted Zone</h2>
+                <div className="font-mono-data text-error text-[10px] mb-3">ACCESS_DENIED_0x403</div>
+                <p className="font-body-sm text-on-surface-variant text-[11px] leading-relaxed mb-4">
+                  Insight Graph nodes require elevated Executive or HR clearance levels.
                 </p>
                 <button 
                   onClick={() => switchUser("CEO_Alpha")}
-                  className="px-4 py-2 border border-error text-error font-label-md uppercase hover:bg-error hover:text-on-error transition-colors w-full cursor-pointer"
+                  className="px-4 py-2 bg-primary text-on-primary font-label-md text-xs rounded-xl hover:bg-blue-700 transition-all cursor-pointer active:scale-95 w-full font-bold"
                 >
                   REQUEST ELEVATION
                 </button>
               </div>
             </div>
-          ) : null}
+          )}
 
-          <div className="p-panel-padding border-b border-outline-variant bg-surface-dim flex justify-between items-center">
-            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px]">query_stats</span> Insight Ledger
-            </div>
-            <div className="px-2 py-0.5 bg-primary-container text-on-primary-container border border-primary text-[10px] font-mono-data flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">verified_user</span> VALIDATED
-            </div>
-          </div>
+          <div className="flex-1 flex flex-col h-full gap-4">
+            <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant font-bold">Organizational Graph</div>
+            
+            <div className="flex-1 bg-surface-container-high border border-outline rounded-2xl relative overflow-hidden min-h-[300px] shadow-inner p-4">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative w-full h-full">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ stroke: "var(--outline-variant)", strokeWidth: "1.5px" }}>
+                    <line x1="50%" x2="20%" y1="25%" y2="65%"></line>
+                    <line x1="50%" x2="80%" y1="25%" y2="65%"></line>
+                    <line x1="50%" x2="50%" y1="25%" y2="85%"></line>
+                    <line className="dash-anim" style={{ stroke: "var(--primary)", strokeWidth: "2px" }} x1="50%" x2="20%" y1="25%" y2="65%"></line>
+                  </svg>
 
-          <div className="flex-1 overflow-y-auto p-panel-padding flex flex-col gap-6">
-            <div>
-              <div className="text-[10px] uppercase text-outline-variant tracking-wider mb-2 font-bold font-headline-md">Verified Citations</div>
-              <div className="flex flex-col gap-2">
-                {results && results.status !== "breach" && results.documents && results.documents.map((doc) => (
-                  <div key={doc.id} className="bg-surface border border-outline-variant p-2 hover:border-primary transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-[14px] text-tertiary">description</span>
-                      <span className="text-[11px] font-mono-data text-on-surface group-hover:text-primary">{doc.name}</span>
-                    </div>
-                    <div className="text-[10px] text-on-surface-variant bg-surface-container p-1 font-mono-data truncate">
-                      Source: {doc.url}
-                    </div>
+                  <div className="absolute top-[25%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-primary-container border border-primary flex items-center justify-center rounded-xl shadow-[0_4px_12px_rgba(37,99,235,0.15)] z-10">
+                    <span className="material-symbols-outlined text-[16px] text-primary">hub</span>
                   </div>
-                ))}
-                {(!results || results.status === "breach") && (
-                  <div className="text-on-surface-variant text-[11px] font-mono-data">No active citations loaded. Execute a successful query to view verification logs.</div>
-                )}
-              </div>
-            </div>
+                  <div className="absolute top-[25%] left-[50%] -translate-x-1/2 -translate-y-10 text-[10px] font-bold text-primary uppercase tracking-wide">Query Node</div>
 
-            <div className="flex-1 flex flex-col">
-              <div className="text-[10px] uppercase text-outline-variant tracking-wider mb-2 font-bold font-headline-md">Org Knowledge Graph</div>
-              <div className="flex-1 bg-surface-container-lowest border border-outline-variant relative overflow-hidden min-h-[220px]">
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className="relative w-full h-full">
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ stroke: "#3d494c", strokeWidth: "1px" }}>
-                      <line x1="50%" x2="20%" y1="20%" y2="60%"></line>
-                      <line x1="50%" x2="80%" y1="20%" y2="60%"></line>
-                      <line x1="50%" x2="50%" y1="20%" y2="80%"></line>
-                      <line className="dash-anim" style={{ stroke: "#4cd7f6", strokeWidth: "1.5px" }} x1="50%" x2="20%" y1="20%" y2="60%"></line>
-                    </svg>
-
-                    <div className="absolute top-[20%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-primary-container border border-primary flex items-center justify-center rounded-none shadow-[0_0_10px_rgba(76,215,246,0.3)] z-10">
-                      <span className="material-symbols-outlined text-[12px] text-on-primary-container">hub</span>
-                    </div>
-                    <div className="absolute top-[20%] left-[50%] -translate-x-1/2 -translate-y-8 text-[9px] font-mono-data text-primary">Query</div>
-
-                    <div className="absolute top-[60%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-surface border border-outline-variant flex items-center justify-center rounded-none z-10 hover:border-primary cursor-pointer">
-                      <span className="material-symbols-outlined text-[10px] text-on-surface">description</span>
-                    </div>
-                    <div className="absolute top-[60%] left-[20%] -translate-x-1/2 translate-y-4 text-[9px] font-mono-data text-on-surface-variant">arch_04.md</div>
-
-                    <div className="absolute top-[60%] left-[80%] -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-surface border border-outline-variant flex items-center justify-center rounded-none z-10">
-                      <span className="material-symbols-outlined text-[10px] text-on-surface">person</span>
-                    </div>
-                    <div className="absolute top-[60%] left-[80%] -translate-x-1/2 translate-y-4 text-[9px] font-mono-data text-on-surface-variant">Standard_Eng</div>
-
-                    <div className="absolute top-[80%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-surface border border-outline-variant flex items-center justify-center rounded-none z-10">
-                      <span className="material-symbols-outlined text-[10px] text-on-surface">forum</span>
-                    </div>
-                    <div className="absolute top-[80%] left-[50%] -translate-x-1/2 translate-y-4 text-[9px] font-mono-data text-on-surface-variant">Slack</div>
+                  <div className="absolute top-[65%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-7 h-7 bg-surface border border-outline flex items-center justify-center rounded-xl shadow-sm z-10 hover:border-primary cursor-pointer active:scale-90">
+                    <span className="material-symbols-outlined text-[14px] text-on-surface">description</span>
                   </div>
+                  <div className="absolute top-[65%] left-[20%] -translate-x-1/2 translate-y-5 text-[10px] font-semibold text-on-surface-variant">arch_04.md</div>
+
+                  <div className="absolute top-[65%] left-[80%] -translate-x-1/2 -translate-y-1/2 w-7 h-7 bg-surface border border-outline flex items-center justify-center rounded-xl shadow-sm z-10">
+                    <span className="material-symbols-outlined text-[14px] text-on-surface">person</span>
+                  </div>
+                  <div className="absolute top-[65%] left-[80%] -translate-x-1/2 translate-y-5 text-[10px] font-semibold text-on-surface-variant">Standard_Eng</div>
+
+                  <div className="absolute top-[85%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-7 h-7 bg-surface border border-outline flex items-center justify-center rounded-xl shadow-sm z-10">
+                    <span className="material-symbols-outlined text-[14px] text-on-surface">forum</span>
+                  </div>
+                  <div className="absolute top-[85%] left-[50%] -translate-x-1/2 translate-y-5 text-[10px] font-semibold text-on-surface-variant">Slack Chat</div>
                 </div>
               </div>
             </div>
@@ -841,34 +800,34 @@ function App() {
       </main>
 
       {selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-outline-variant w-full max-w-xl p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface border border-outline w-full max-w-xl p-6 rounded-2xl shadow-xl relative">
             <button 
               onClick={() => setSelectedDoc(null)}
-              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer"
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer flex items-center p-1 hover:bg-surface-variant rounded-lg"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
-            <div className="flex items-center gap-2 border-b border-outline-variant pb-3 mb-4">
-              <span className="material-symbols-outlined text-primary text-[24px]">description</span>
-              <h2 className="font-headline-md text-headline-md font-bold text-on-surface">{selectedDoc.name}</h2>
+            <div className="flex items-center gap-2 border-b border-outline pb-3 mb-4">
+              <span className="material-symbols-outlined text-primary text-[22px]">description</span>
+              <h2 className="font-headline-md text-headline-md font-bold text-on-surface text-base">{selectedDoc.name}</h2>
             </div>
             <div className="space-y-4 font-body-md text-on-surface">
-              <div className="bg-surface-container p-4 border border-outline-variant max-h-60 overflow-y-auto select-text font-mono-data whitespace-pre-line leading-relaxed">
+              <div className="bg-background p-4 border border-outline rounded-xl max-h-60 overflow-y-auto select-text font-mono-data text-xs whitespace-pre-line leading-relaxed text-on-surface">
                 {selectedDoc.content}
               </div>
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono-data pt-2">
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold pt-2">
                 <div>
-                  <span className="text-on-surface-variant uppercase block tracking-wider">Source Type</span>
-                  <span className="text-primary font-bold">{selectedDoc.source_type}</span>
+                  <span className="text-on-surface-variant uppercase block tracking-wider text-[9px] mb-0.5">Source Type</span>
+                  <span className="text-primary font-bold text-[12px]">{selectedDoc.source_type}</span>
                 </div>
                 <div>
-                  <span className="text-on-surface-variant uppercase block tracking-wider">Access Clearance</span>
-                  <span className="text-tertiary font-bold">{selectedDoc.access_level}</span>
+                  <span className="text-on-surface-variant uppercase block tracking-wider text-[9px] mb-0.5">Access Clearance</span>
+                  <span className="text-tertiary font-bold text-[12px]">{selectedDoc.access_level}</span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-on-surface-variant uppercase block tracking-wider">Resource Path</span>
-                  <a href={selectedDoc.url} target="_blank" rel="noreferrer" className="text-primary hover:underline break-all">
+                  <span className="text-on-surface-variant uppercase block tracking-wider text-[9px] mb-0.5">Resource Link</span>
+                  <a href={selectedDoc.url} target="_blank" rel="noreferrer" className="text-primary hover:underline break-all font-mono-data text-[11px] font-normal">
                     {selectedDoc.url}
                   </a>
                 </div>
@@ -879,28 +838,28 @@ function App() {
       )}
 
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-outline-variant w-full max-w-4xl h-[85vh] p-6 shadow-2xl relative flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface border border-outline w-full max-w-4xl h-[80vh] p-6 rounded-2xl shadow-xl relative flex flex-col">
             <button 
               onClick={() => setShowSettings(false)}
-              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer"
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer p-1 hover:bg-surface-variant rounded-lg flex items-center"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
-            <div className="flex items-center gap-2 border-b border-outline-variant pb-3 mb-4">
-              <span className="material-symbols-outlined text-primary text-[24px]">settings_accessibility</span>
-              <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Nuara Governance & Admin Console</h2>
+            <div className="flex items-center gap-2 border-b border-outline pb-3 mb-4">
+              <span className="material-symbols-outlined text-primary text-[22px]">settings_accessibility</span>
+              <h2 className="font-headline-md text-headline-md font-bold text-on-surface text-base">Nuara Governance & Admin Console</h2>
             </div>
 
             <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
               <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
-                <div className="border border-outline-variant bg-surface-container-low p-4">
-                  <h3 className="font-label-md text-primary uppercase mb-3">Upload / Seed Document</h3>
+                <div className="border border-outline bg-surface-variant/40 p-4 rounded-xl">
+                  <h3 className="font-label-md text-primary uppercase mb-3 text-xs font-bold">Upload / Seed Document</h3>
                   <form onSubmit={handleCreateDocument} className="space-y-3">
                     <div>
-                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1">File Name</label>
+                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1 font-bold">File Name</label>
                       <input 
-                        className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                        className="w-full bg-surface border border-outline rounded-lg focus:border-primary focus:ring-1 focus:ring-primary font-mono-data text-xs p-2 text-on-surface"
                         placeholder="e.g. Q4_Strategy.txt"
                         type="text" 
                         value={newDoc.name}
@@ -908,9 +867,9 @@ function App() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Content Body</label>
+                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1 font-bold">Content Body</label>
                       <textarea 
-                        className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface h-24 resize-none"
+                        className="w-full bg-surface border border-outline rounded-lg focus:border-primary focus:ring-1 focus:ring-primary font-mono-data text-xs p-2 text-on-surface h-24 resize-none"
                         placeholder="Type document contents..."
                         value={newDoc.content}
                         onChange={e => setNewDoc({...newDoc, content: e.target.value})}
@@ -918,9 +877,9 @@ function App() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Source Folder</label>
+                        <label className="text-[10px] text-on-surface-variant uppercase block mb-1 font-bold">Source Folder</label>
                         <select 
-                          className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                          className="w-full bg-surface border border-outline rounded-lg focus:border-primary focus:ring-1 focus:ring-primary font-mono-data text-xs p-2 text-on-surface"
                           value={newDoc.source_type}
                           onChange={e => setNewDoc({...newDoc, source_type: e.target.value})}
                         >
@@ -931,23 +890,23 @@ function App() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Required Clearance</label>
+                        <label className="text-[10px] text-on-surface-variant uppercase block mb-1 font-bold">Required Clearance</label>
                         <select 
-                          className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                          className="w-full bg-surface border border-outline rounded-lg focus:border-primary focus:ring-1 focus:ring-primary font-mono-data text-xs p-2 text-on-surface"
                           value={newDoc.access_level}
                           onChange={e => setNewDoc({...newDoc, access_level: e.target.value})}
                         >
                           <option value="PUBLIC">PUBLIC</option>
-                          <option value="ENG">ENG (Engineering)</option>
-                          <option value="HR">HR (Human Resources)</option>
-                          <option value="EXEC">EXEC (Executive)</option>
+                          <option value="ENG">ENG</option>
+                          <option value="HR">HR</option>
+                          <option value="EXEC">EXEC</option>
                         </select>
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1">Resource URL</label>
+                      <label className="text-[10px] text-on-surface-variant uppercase block mb-1 font-bold">Resource URL</label>
                       <input 
-                        className="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-0 font-mono-data text-xs p-2 text-on-surface"
+                        className="w-full bg-surface border border-outline rounded-lg focus:border-primary focus:ring-1 focus:ring-primary font-mono-data text-xs p-2 text-on-surface"
                         placeholder="https://nexus.internal/docs/filename"
                         type="text" 
                         value={newDoc.url}
@@ -956,7 +915,7 @@ function App() {
                     </div>
                     <button 
                       type="submit"
-                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs hover:bg-primary-container transition-colors cursor-pointer"
+                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg hover:bg-blue-700 transition-colors cursor-pointer active:scale-98 font-bold"
                     >
                       Seed to Vector & Graph Stores
                     </button>
@@ -964,17 +923,17 @@ function App() {
                 </div>
               </div>
 
-              <div className="w-80 flex flex-col gap-4 overflow-y-auto border-l border-outline-variant pl-6">
+              <div className="w-80 flex flex-col gap-4 overflow-y-auto border-l border-outline pl-6">
                 <div>
-                  <h3 className="font-label-md text-primary uppercase mb-2">Access Control Governance</h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  <h3 className="font-label-md text-primary uppercase mb-2 text-xs font-bold">Access Control List</h3>
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                     {dbDocs.map(doc => (
-                      <div key={doc.id} className="border border-outline-variant bg-surface-container-high p-2 flex flex-col gap-1">
-                        <div className="font-mono-data text-[11px] text-on-surface truncate font-bold">{doc.name}</div>
+                      <div key={doc.id} className="border border-outline bg-surface-variant/30 p-2 rounded-lg flex flex-col gap-1">
+                        <div className="font-mono-data text-[11px] text-on-surface truncate font-semibold">{doc.name}</div>
                         <div className="flex items-center justify-between mt-1">
-                          <span className="text-[9px] text-on-surface-variant uppercase">Clearance</span>
+                          <span className="text-[9px] text-on-surface-variant font-bold uppercase">Clearance</span>
                           <select 
-                            className="bg-surface border border-outline-variant font-mono-data text-[9px] p-0.5 text-on-surface"
+                            className="bg-surface border border-outline rounded font-mono-data text-[9px] p-0.5 text-on-surface focus:outline-none"
                             value={doc.access_level}
                             onChange={e => handleUpdatePermission(doc.id, e.target.value)}
                           >
@@ -989,11 +948,11 @@ function App() {
                   </div>
                 </div>
 
-                <div className="border-t border-outline-variant pt-4 mt-auto">
-                  <h3 className="font-label-md text-error uppercase mb-2">Knowledge Gap Analytics</h3>
-                  <div className="bg-[#0a0e18] border border-outline-variant p-3 text-[10px] font-mono-data text-on-surface-variant leading-relaxed max-h-40 overflow-y-auto">
+                <div className="border-t border-outline pt-4 mt-auto">
+                  <h3 className="font-label-md text-error uppercase mb-2 text-xs font-bold">Gap Analytics</h3>
+                  <div className="bg-[#090d16] border border-outline p-3 rounded-lg text-[10px] font-mono-data text-slate-400 leading-relaxed max-h-40 overflow-y-auto select-text">
                     {gapAnalysis.map((gap, i) => (
-                      <div key={i} className="mb-2 last:mb-0 border-b border-outline-variant/10 pb-1">
+                      <div key={i} className="mb-2 last:mb-0 border-b border-slate-800 pb-1">
                         &gt; {gap}
                       </div>
                     ))}

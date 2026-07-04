@@ -8,83 +8,90 @@
   --surface: #ffffff;
   --surface-dim: #f8fafc;
   --on-surface: #0f172a;
-  --surface-variant: #e2e8f0;
-  --outline: #cbd5e1;
+  --surface-variant: #f1f5f9;
+  --outline: #e2e8f0;
   --surface-container-low: #ffffff;
   --surface-container-lowest: #ffffff;
-  --surface-container-high: #f1f5f9;
+  --surface-container-high: #f8fafc;
   --on-surface-variant: #64748b;
   --outline-variant: #cbd5e1;
   --primary-container: #dbeafe;
-  --secondary-container: #e2e8f0;
+  --secondary-container: #f1f5f9;
   --surface-container: #ffffff;
   --surface-tint: #2563eb;
-  --error: #ffb4ab;
-  --error-container: #93000a;
-  --on-error: #690005;
-  --on-error-container: #ffdad6;
-  --tertiary: #da9942;
-  --tertiary-container: #ffddb8;
-  --on-tertiary-container: #563400;
+  --error: #ef4444;
+  --error-container: #fee2e2;
+  --on-error: #991b1b;
+  --on-error-container: #fca5a5;
+  --tertiary: #f59e0b;
+  --tertiary-container: #fef3c7;
+  --on-tertiary-container: #78350f;
   --on-primary: #ffffff;
-  --on-primary-container: #00424f;
-  --secondary: #bcc7de;
-  --on-secondary: #263143;
-  --on-secondary-container: #aeb9d0;
+  --on-primary-container: #1e3a8a;
+  --secondary: #64748b;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #334155;
   --surface-bright: #ffffff;
   --on-background: #0f172a;
-  --inverse-surface: #dfe2f1;
-  --inverse-on-surface: #2c303b;
-  --inverse-primary: #00687a;
+  --inverse-surface: #0f172a;
+  --inverse-on-surface: #f8fafc;
+  --inverse-primary: #3b82f6;
 }
 
 .dark {
-  --primary: #4cd7f6;
-  --background: #0f131d;
-  --surface: #0f131d;
-  --surface-dim: #0f131d;
-  --on-surface: #dfe2f1;
-  --surface-variant: #313540;
-  --outline: #869397;
-  --surface-container-low: #171b26;
-  --surface-container-lowest: #0a0e18;
-  --surface-container-high: #262a35;
-  --on-surface-variant: #bcc9cd;
-  --outline-variant: #3d494c;
-  --primary-container: #06b6d4;
-  --secondary-container: #3e495d;
-  --surface-container: #1c1f2a;
-  --surface-tint: #4cd7f6;
-  --error: #ffb4ab;
-  --error-container: #93000a;
-  --on-error: #690005;
-  --on-error-container: #ffdad6;
-  --tertiary: #ffb95f;
-  --tertiary-container: #e79400;
-  --on-tertiary-container: #563400;
-  --on-primary: #003640;
-  --on-primary-container: #00424f;
-  --secondary: #bcc7de;
-  --on-secondary: #263143;
-  --on-secondary-container: #aeb9d0;
-  --surface-bright: #353944;
-  --on-background: #dfe2f1;
-  --inverse-surface: #dfe2f1;
-  --inverse-on-surface: #2c303b;
-  --inverse-primary: #00687a;
+  --primary: #06b6d4;
+  --background: #090d16;
+  --surface: #0f172a;
+  --surface-dim: #090d16;
+  --on-surface: #f8fafc;
+  --surface-variant: #1e293b;
+  --outline: #334155;
+  --surface-container-low: #0f172a;
+  --surface-container-lowest: #020617;
+  --surface-container-high: #1e293b;
+  --on-surface-variant: #94a3b8;
+  --outline-variant: #475569;
+  --primary-container: #0891b2;
+  --secondary-container: #1e293b;
+  --surface-container: #0f172a;
+  --surface-tint: #06b6d4;
+  --error: #f43f5e;
+  --error-container: #881337;
+  --on-error: #fff1f2;
+  --on-error-container: #fecdd3;
+  --tertiary: #fbbf24;
+  --tertiary-container: #78350f;
+  --on-tertiary-container: #fde68a;
+  --on-primary: #0f172a;
+  --on-primary-container: #ecfeff;
+  --secondary: #94a3b8;
+  --on-secondary: #0f172a;
+  --on-secondary-container: #f1f5f9;
+  --surface-bright: #1e293b;
+  --on-background: #f8fafc;
+  --inverse-surface: #f8fafc;
+  --inverse-on-surface: #0f172a;
+  --inverse-primary: #06b6d4;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);
+  color: var(--on-surface);
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--outline-variant);
+  background: var(--outline);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -102,7 +109,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background-color: var(--outline-variant);
+  background-color: var(--outline);
 }
 
 .tree-line::after {
@@ -112,19 +119,19 @@
   top: 10px;
   width: 8px;
   height: 1px;
-  background-color: var(--outline-variant);
+  background-color: var(--outline);
 }
 
 @keyframes pulse-alert {
   0%, 100% {
-    background-color: rgba(147, 0, 10, 0.1);
+    background-color: rgba(239, 68, 68, 0.05);
     border-color: var(--error);
     color: var(--error);
   }
   50% {
-    background-color: rgba(147, 0, 10, 0.3);
+    background-color: rgba(239, 68, 68, 0.15);
     border-color: var(--error-container);
-    color: var(--on-error-container);
+    color: var(--on-error);
   }
 }
 
@@ -134,10 +141,10 @@
     opacity: 0;
   }
   10% {
-    opacity: 0.1;
+    opacity: 0.05;
   }
   90% {
-    opacity: 0.1;
+    opacity: 0.05;
   }
   100% {
     transform: translateY(100vh);
@@ -166,7 +173,7 @@
 
 .crt-overlay {
   pointer-events: none;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.08) 50%), linear-gradient(90deg, rgba(239, 68, 68, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
   background-size: 100% 2px, 3px 100%;
   z-index: 999;
   position: fixed;
@@ -174,7 +181,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  opacity: 0.15;
+  opacity: 0.12;
 }
 
 .dash-anim {
