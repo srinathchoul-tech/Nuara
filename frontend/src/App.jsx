@@ -38,6 +38,8 @@ function App() {
     url: ""
   });
   const [gapAnalysis, setGapAnalysis] = useState([]);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [theme, setTheme] = useState("dark");
 
   const logEndRef = useRef(null);
@@ -316,7 +318,15 @@ function App() {
       {session.is_locked && <div className="crt-overlay"></div>}
 
       <header className="bg-surface border-b border-outline px-6 h-14 w-full z-50 shrink-0 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+            className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface-variant flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {isLeftSidebarOpen ? "menu_open" : "menu"}
+            </span>
+          </button>
           <span className="font-headline-md text-headline-md font-bold text-primary tracking-tighter uppercase leading-none">Nuara</span>
           {session.is_locked && (
             <>
@@ -331,6 +341,14 @@ function App() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 bg-surface-variant p-1 rounded-lg">
+            <button 
+              onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+              className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface flex items-center justify-center cursor-pointer active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {isRightSidebarOpen ? "view_sidebar" : "splitscreen"}
+              </span>
+            </button>
             <button 
               onClick={() => setShowSettings(!showSettings)}
               className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface flex items-center justify-center cursor-pointer active:scale-95"
@@ -397,10 +415,11 @@ function App() {
       </header>
 
       <main className="flex-1 flex overflow-hidden">
-        <nav 
-          style={{ width: `${sidebarWidth}px` }} 
-          className="bg-surface border-r border-outline flex flex-col h-full z-40 shrink-0"
-        >
+        {isLeftSidebarOpen && (
+          <nav 
+            style={{ width: `${sidebarWidth}px` }} 
+            className="bg-surface border-r border-outline flex flex-col h-full z-40 shrink-0"
+          >
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant font-bold px-2">Data Vault</div>
             <ul className="space-y-1">
@@ -549,11 +568,14 @@ function App() {
             )}
           </div>
         </nav>
+        )}
 
-        <div 
-          onMouseDown={startResizeSidebar}
-          className="w-1 hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0 bg-outline" 
-        />
+        {isLeftSidebarOpen && (
+          <div 
+            onMouseDown={startResizeSidebar}
+            className="w-1 hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0 bg-outline" 
+          />
+        )}
 
         <section className="flex-1 bg-background flex flex-col min-w-0 p-6 overflow-y-auto relative">
           
@@ -729,15 +751,18 @@ function App() {
           )}
         </section>
 
-        <div 
-          onMouseDown={startResizeLedger}
-          className="w-1 hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0 bg-outline" 
-        />
+        {isRightSidebarOpen && (
+          <div 
+            onMouseDown={startResizeLedger}
+            className="w-1 hover:bg-primary cursor-col-resize transition-colors duration-150 z-50 self-stretch shrink-0 bg-outline" 
+          />
+        )}
 
-        <aside 
-          style={{ width: `${ledgerWidth}px` }} 
-          className="bg-surface border-l border-outline flex flex-col z-30 shrink-0 relative p-6"
-        >
+        {isRightSidebarOpen && (
+          <aside 
+            style={{ width: `${ledgerWidth}px` }} 
+            className="bg-surface border-l border-outline flex flex-col z-30 shrink-0 relative p-6"
+          >
           {session.is_locked && (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-surface/90 backdrop-blur-md">
               <div aria-hidden="true" className="absolute inset-0 opacity-5 font-mono-data text-[7px] text-error overflow-hidden break-all leading-none z-0 select-none">
@@ -797,7 +822,8 @@ function App() {
             </div>
           </div>
         </aside>
-      </main>
+      )}
+    </main>
 
       {selectedDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
