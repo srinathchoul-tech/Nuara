@@ -4,7 +4,8 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 from backend.database import init_db, get_db_connection
-from backend.search import search_rag, log_audit
+from backend.postgres_db import get_user_role, write_audit_log, read_audit_logs
+from backend.search import search_rag
 from backend.agent import simulate_agent_chain
 
 app = FastAPI()
@@ -40,21 +41,16 @@ def get_session():
 
 @app.post("/api/session/switch")
 def switch_role(req: SwitchRoleRequest):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (req.user_id,))
-    user = cursor.fetchone()
-    conn.close()
-    
+    user = get_user_role(req.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    session_state["user_id"] = user["id"]
-    session_state["role"] = user["username"]
+    session_state["user_id"] = req.user_id
+    session_state["role"] = user["role"]
     session_state["clearance"] = user["clearance_level"]
     session_state["is_locked"] = False
     
-    log_audit("INFO", "IAM_Gateway", f"Session switched to {user['id']} with role {user['username']}")
+    write_audit_log("INFO", "IAM_Gateway", f"Session switched to {req.user_id} with role {user['role']}")
     return session_state
 
 @app.post("/api/query")
@@ -85,26 +81,18 @@ def execute_query(req: QueryRequest):
 
 @app.get("/api/logs")
 def get_logs():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT 30")
-    logs = [dict(row) for row in cursor.fetchall()]
-    conn.close()
-    return logs
+    return read_audit_logs(30)
 
 @app.post("/api/reset")
 def reset_alert():
     session_state["is_locked"] = False
-    log_audit("INFO", "SecurityEnforcer", "Lockdown cleared. Normal operations restored.")
+    write_audit_log("INFO", "SecurityEnforcer", "Lockdown cleared. Normal operations restored.")
     return {"status": "cleared"}
 
 @app.get("/api/admin/gap-analysis")
 def gap_analysis():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT msg FROM audit_logs WHERE level = 'WARN'")
-    warnings = [row["msg"] for row in cursor.fetchall()]
-    conn.close()
+    logs = read_audit_logs(100)
+    warnings = [log["msg"] for log in logs if log["level"] == "WARN"]
     
     gaps = []
     for warn in warnings:

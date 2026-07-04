@@ -1,6 +1,6 @@
 import time
 from backend.database import get_db_connection
-from backend.search import log_audit
+from backend.postgres_db import write_audit_log
 
 def simulate_agent_chain(query_text, search_result, user_id):
     conn = get_db_connection()
@@ -8,8 +8,6 @@ def simulate_agent_chain(query_text, search_result, user_id):
     
     cursor.execute("DELETE FROM agent_steps")
     conn.commit()
-    
-    steps = []
     
     if search_result["status"] == "breach":
         cursor.execute(
@@ -34,7 +32,7 @@ def simulate_agent_chain(query_text, search_result, user_id):
     )
     conn.commit()
     
-    log_audit("INFO", "Planner", "Sub-task generation complete")
+    write_audit_log("INFO", "Planner", "Sub-task generation complete")
     
     time.sleep(0.1)
     
@@ -46,7 +44,7 @@ def simulate_agent_chain(query_text, search_result, user_id):
     )
     conn.commit()
     
-    log_audit("INFO", "Retrieval", "Streaming vectors...")
+    write_audit_log("INFO", "Retrieval", "Streaming vectors...")
     
     time.sleep(0.1)
     
@@ -58,6 +56,6 @@ def simulate_agent_chain(query_text, search_result, user_id):
     )
     conn.commit()
     
-    log_audit("INFO", "Synthesis", "Final response generated with citations")
+    write_audit_log("INFO", "Synthesis", "Final response generated with citations")
     
     conn.close()
