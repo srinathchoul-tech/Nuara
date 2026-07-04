@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 from backend.database import init_db, get_db_connection
-from backend.postgres_db import get_user_role, write_audit_log, read_audit_logs, add_document, update_document_permission
+from backend.postgres_db import get_user_role, write_audit_log, read_audit_logs, add_document, update_document_permission, get_all_documents
 from backend.search import search_rag
 from backend.agent import simulate_agent_chain
 
@@ -135,6 +135,82 @@ def api_update_permission(req: UpdatePermRequest):
 @app.get("/api/admin/documents")
 def api_get_documents():
     return get_all_documents()
+
+class OnboardingChatRequest(BaseModel):
+    message: str
+
+def query_app_documentation(query_text: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT content FROM app_documentation")
+        rows = cursor.fetchall()
+        chunks = [row["content"] for row in rows]
+    except Exception:
+        chunks = []
+    finally:
+        conn.close()
+        
+    import re
+    query_terms = set(re.findall(r"\w+", query_text.lower()))
+    scored_chunks = []
+    for chunk in chunks:
+        score = sum(1 for term in query_terms if term in chunk.lower())
+        if score > 0:
+            scored_chunks.append((chunk, score))
+            
+    scored_chunks = sorted(scored_chunks, key=lambda x: x[1], reverse=True)
+    return [item[0] for item in scored_chunks]
+
+def generate_architect_response(query_text: str, context_chunks: list):
+    query_lower = query_text.lower()
+    
+    if any(k in query_lower for k in ["security", "permission", "leak", "acl", "clearance", "restrict"]):
+        return (
+            "As the Lead Technical Architect, I designed our security model around Permission-Integrated Intelligence. "
+            "Every RAG traversal checks the user's IAM clearance context (PUBLIC, ENG, HR, EXEC) "
+            "against the target document ACL. This pre-retrieval authorization check prevents data leaks before "
+            "RAG synthesis occurs."
+        )
+        
+    if any(k in query_lower for k in ["tech stack", "stack", "technology", "db", "database", "neo4j", "qdrant"]):
+        return (
+            "Our core tech stack unifies React (Vite/Tailwind CSS) on the frontend, FastAPI for backend RAG routers, "
+            "Qdrant/pgvector for text embedding search, Neo4j for mapping entity graph relations, and LangGraph "
+            "for executing multi-agent validation chains."
+        )
+        
+    if any(k in query_lower for k in ["logs", "transparency", "steps", "audit"]):
+        return (
+            "We enforce Auditable Agent Transparency by leveraging LangGraph. As a query flows through the pipeline, "
+            "execution steps (Planning, Graph Search, Synthesis) and durations are tracked. These logs are saved "
+            "to the audit database and pushed directly to the UI logs terminal for real-time visibility."
+        )
+        
+    if any(k in query_lower for k in ["decision", "graph", "relational", "historical"]):
+        return (
+            "We've created an Org-Wide Decision Memory mapping layer using Neo4j. By representing concepts, files, "
+            "and communication history as graph nodes and edges, we trace why key product decisions were made, "
+            "linking technical drafts directly to past discussions."
+        )
+        
+    if context_chunks:
+        summary = " ".join(context_chunks[:2])
+        return (
+            f"Regarding your query, here is how NexusBrain is designed: {summary} "
+            "Let me know if you would like me to dive deeper into any specific innovation or component of our architecture."
+        )
+        
+    return (
+        "Hello! I am the Lead Technical Architect of NexusBrain. I can help explain our GraphRAG pipeline, "
+        "permission-integrated intelligence check, or LangGraph agent logs. What would you like to know about our system?"
+    )
+
+@app.post("/api/onboarding/chat")
+def onboarding_chat(req: OnboardingChatRequest):
+    chunks = query_app_documentation(req.message)
+    response_text = generate_architect_response(req.message, chunks)
+    return {"response": response_text}
 
 
 if __name__ == "__main__":

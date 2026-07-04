@@ -42,6 +42,14 @@ function App() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [copilotInput, setCopilotInput] = useState("");
+  const [copilotMessages, setCopilotMessages] = useState([
+    { sender: "system", text: "Hello! I am the Lead Technical Architect of NexusBrain. Ask me anything about our architecture, security permissions, or tech stack." }
+  ]);
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const copilotEndRef = useRef(null);
+
   const logEndRef = useRef(null);
 
   const fetchSession = async () => {
@@ -278,6 +286,41 @@ function App() {
       logEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [logs]);
+
+  useEffect(() => {
+    if (copilotEndRef.current) {
+      copilotEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [copilotMessages, copilotLoading]);
+
+  const handleCopilotSend = async (e) => {
+    if (e) e.preventDefault();
+    if (!copilotInput.trim()) return;
+
+    const userMsg = copilotInput;
+    setCopilotMessages(prev => [...prev, { sender: "user", text: userMsg }]);
+    setCopilotInput("");
+    setCopilotLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/onboarding/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMsg })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCopilotMessages(prev => [...prev, { sender: "system", text: data.response }]);
+      } else {
+        setCopilotMessages(prev => [...prev, { sender: "system", text: "Error: Copilot gateway unreachable." }]);
+      }
+    } catch (err) {
+      console.error(err);
+      setCopilotMessages(prev => [...prev, { sender: "system", text: "Connection error. Please try again." }]);
+    } finally {
+      setCopilotLoading(false);
+    }
+  };
 
   const selectDocumentQuery = (docName, queryText) => {
     setQuery(queryText);
@@ -669,7 +712,7 @@ function App() {
             </div>
           </div>
 
-          <div className="absolute bottom-6 right-6 z-40">
+          <div className="absolute bottom-6 left-6 z-40">
             <button 
               onClick={() => setShowLogs(!showLogs)}
               className="px-4 py-2 bg-surface hover:bg-surface-variant border border-outline rounded-xl text-on-surface shadow-sm text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
@@ -727,7 +770,7 @@ function App() {
             {session.is_locked && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-surface/90 backdrop-blur-md">
                 <div aria-hidden="true" className="absolute inset-0 opacity-5 font-mono-data text-[7px] text-error overflow-hidden break-all leading-none z-0 select-none">
-                  01000100 01000101 01001110 01001001 01000100 00100000 01000001 01000011 01000011 01000101 01010011 01010011 00100000 01010110 01001001 01001110 01001100 01000001 01010100 01001001 01001111 01011010
+                  01000100 01000101 01001110 01001001 01000100 00100000 01000001 01000011 01000011 01000011 01000101 01010011 01010011 00100000 01010110 01001001 01001110 01001100 01000001 01010100 01001001 01001111 01011010
                 </div>
                 <div className="relative z-10 text-center p-4 border border-outline rounded-2xl bg-background shadow-lg max-w-[280px]">
                   <span className="material-symbols-outlined text-4xl text-error mb-2">lock</span>
@@ -944,6 +987,74 @@ function App() {
           </div>
         </div>
       )}
+
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        {isCopilotOpen && (
+          <div className="w-[380px] h-[500px] bg-surface border border-outline rounded-2xl shadow-xl mb-4 flex flex-col overflow-hidden animate-slide-up">
+            <div className="bg-primary text-on-primary px-4 py-3 flex items-center justify-between border-b border-outline">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px]">psychology</span>
+                <span className="font-bold text-xs uppercase tracking-wider text-white">Onboarding Copilot</span>
+              </div>
+              <button 
+                onClick={() => setIsCopilotOpen(false)}
+                className="text-on-primary/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-surface-dim select-text">
+              {copilotMessages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed ${
+                    msg.sender === "user" 
+                      ? "bg-primary text-on-primary rounded-tr-none text-white font-medium" 
+                      : "bg-surface border border-outline text-on-surface rounded-tl-none font-medium"
+                  }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {copilotLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-surface border border-outline text-on-surface-variant rounded-2xl rounded-tl-none px-3.5 py-2 text-xs flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.2s]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.4s]"></span>
+                  </div>
+                </div>
+              )}
+              <div ref={copilotEndRef} />
+            </div>
+
+            <form onSubmit={handleCopilotSend} className="p-3 border-t border-outline bg-surface flex items-center gap-2">
+              <input 
+                type="text" 
+                value={copilotInput}
+                onChange={(e) => setCopilotInput(e.target.value)}
+                placeholder="Ask me how NexusBrain works..."
+                className="flex-1 bg-surface-variant border border-outline rounded-xl px-3 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary"
+              />
+              <button 
+                type="submit"
+                className="w-8 h-8 rounded-xl bg-primary text-on-primary flex items-center justify-center hover:bg-opacity-95 active:scale-95 transition-all btn-glow"
+              >
+                <span className="material-symbols-outlined text-[16px] text-white">send</span>
+              </button>
+            </form>
+          </div>
+        )}
+
+        <button 
+          onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+          className="w-12 h-12 rounded-full bg-[#7251b5] text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all btn-glow cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[24px]">
+            {isCopilotOpen ? "close" : "forum"}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
