@@ -3,14 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 const API_BASE = "http://127.0.0.1:8000/api";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("Srinath Choul");
-  const [selectedRole, setSelectedRole] = useState({
-    user_id: "Node_02",
-    role: "Standard_Eng",
-    clearance: "ENG"
-  });
-
   const [session, setSession] = useState({
     user_id: "Node_02",
     role: "Standard_Eng",
@@ -46,6 +38,9 @@ function App() {
   });
   const [gapAnalysis, setGapAnalysis] = useState([]);
   const [theme, setTheme] = useState("dark");
+
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   const logEndRef = useRef(null);
 
@@ -87,24 +82,6 @@ function App() {
     } catch (err) {
       console.error(err);
       setDbDocs([]);
-    }
-  };
-
-  const loginUser = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/session/switch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: selectedRole.user_id })
-      });
-      const data = await res.json();
-      setSession(data);
-      setResults(null);
-      setQuery("");
-      setIsLoggedIn(true);
-      fetchLogs();
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -318,97 +295,26 @@ function App() {
     return "bg-primary text-on-primary";
   };
 
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
-
-  if (!isLoggedIn) {
-    return (
-      <div className={`h-screen w-screen overflow-hidden flex flex-col items-center justify-center p-6 bg-background text-on-surface font-body-sm`}>
-        <div className="bg-surface border border-outline w-full max-w-md p-8 rounded-2xl shadow-xl space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="font-headline-lg text-headline-lg font-bold text-primary uppercase tracking-tighter">Nuara Core</h1>
-            <p className="text-[12px] text-on-surface-variant/80 uppercase tracking-widest font-semibold">Workspace Authorization Gateway</p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-[10px] text-on-surface-variant font-bold uppercase block mb-1">Operator Profile Name</label>
-              <input 
-                className="w-full bg-background border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary font-semibold text-xs p-3 text-on-surface"
-                type="text" 
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] text-on-surface-variant font-bold uppercase block mb-1">Select Clearance Context</label>
-              <div 
-                onClick={() => setSelectedRole({ user_id: "Node_02", role: "Software Engineer", clearance: "ENG" })}
-                className={`border p-3 flex items-center justify-between cursor-pointer rounded-xl transition-all ${selectedRole.user_id === "Node_02" ? "border-primary bg-primary-container" : "border-outline hover:border-primary bg-background"}`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[18px]">engineering</span>
-                  <span className="font-semibold text-[13px]">Software Engineer</span>
-                </div>
-                <span className="text-[9px] font-mono-data font-bold bg-surface px-1.5 py-0.5 border border-outline text-on-surface-variant rounded">ENG</span>
-              </div>
-
-              <div 
-                onClick={() => setSelectedRole({ user_id: "HR_Lead", role: "HR Lead", clearance: "HR" })}
-                className={`border p-3 flex items-center justify-between cursor-pointer rounded-xl transition-all ${selectedRole.user_id === "HR_Lead" ? "border-primary bg-primary-container" : "border-outline hover:border-primary bg-background"}`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[18px]">badge</span>
-                  <span className="font-semibold text-[13px]">HR Lead</span>
-                </div>
-                <span className="text-[9px] font-mono-data font-bold bg-surface px-1.5 py-0.5 border border-outline text-on-surface-variant rounded">HR</span>
-              </div>
-
-              <div 
-                onClick={() => setSelectedRole({ user_id: "CEO_Alpha", role: "CEO Executive", clearance: "EXEC" })}
-                className={`border p-3 flex items-center justify-between cursor-pointer rounded-xl transition-all ${selectedRole.user_id === "CEO_Alpha" ? "border-primary bg-primary-container" : "border-outline hover:border-primary bg-background"}`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-                  <span className="font-semibold text-[13px]">CEO Executive</span>
-                </div>
-                <span className="text-[9px] font-mono-data font-bold bg-surface px-1.5 py-0.5 border border-outline text-on-surface-variant rounded">EXEC</span>
-              </div>
-            </div>
-
-            <button 
-              onClick={loginUser}
-              className="w-full py-3 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-xl btn-glow font-bold"
-            >
-              Sign In to Workspace
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200 ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
       {session.is_locked && <div className="crt-overlay"></div>}
 
-      <header className="bg-[#6247aa] border-b border-[#7251b5] px-6 h-20 w-full z-50 shrink-0 flex justify-between items-center text-[#dec9e9]">
+      <header className="bg-[var(--header-bg)] border-b border-outline px-6 h-16 w-full z-50 shrink-0 flex justify-between items-center text-on-surface transition-colors duration-200 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-            className="text-[#dec9e9] hover:text-white transition-colors p-1.5 rounded-md hover:bg-[#7251b5] flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+            className="text-on-surface hover:bg-surface-variant transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
           >
             <span className="material-symbols-outlined text-[20px]">
               {isLeftSidebarOpen ? "menu_open" : "menu"}
             </span>
           </button>
-          <span className="font-headline-md text-headline-md font-bold text-white tracking-tighter uppercase leading-none">Nuara</span>
+          <span className="font-headline-md text-headline-md font-bold text-on-surface tracking-tighter uppercase leading-none">Nuara</span>
           {session.is_locked && (
             <>
-              <div className="h-4 w-px bg-[#7251b5] mx-2"></div>
-              <span className="font-mono-data text-mono-data text-rose-300 uppercase tracking-widest flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></span>
+              <div className="h-4 w-px bg-outline mx-2"></div>
+              <span className="font-mono-data text-mono-data text-error uppercase tracking-widest flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
                 SYSTEM_LOCKDOWN_ACTIVE
               </span>
             </>
@@ -416,10 +322,10 @@ function App() {
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5 bg-[#4c3590] p-1 rounded-lg">
+          <div className="flex items-center gap-1.5 bg-surface-variant p-1 rounded-lg">
             <button 
               onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-              className="text-[#dec9e9] hover:text-white transition-colors p-1.5 rounded-md hover:bg-[#6247aa] flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {isRightSidebarOpen ? "view_sidebar" : "splitscreen"}
@@ -427,13 +333,13 @@ function App() {
             </button>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className="text-[#dec9e9] hover:text-white transition-colors p-1.5 rounded-md hover:bg-[#6247aa] flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">security</span>
             </button>
             <button 
               onClick={toggleTheme}
-              className="text-[#dec9e9] hover:text-white transition-colors p-1.5 rounded-md hover:bg-[#6247aa] flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {theme === "dark" ? "light_mode" : "dark_mode"}
@@ -441,24 +347,24 @@ function App() {
             </button>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className="text-[#dec9e9] hover:text-white transition-colors p-1.5 rounded-md hover:bg-[#6247aa] flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </button>
           </div>
           
-          <div className="h-8 w-px bg-[#7251b5]"></div>
+          <div className="h-8 w-px bg-outline"></div>
 
           <div className="flex items-center gap-3">
             <div className="text-right flex flex-col justify-center">
-              <span className="font-bold text-[14px] text-white leading-tight">{username}</span>
+              <span className="font-bold text-[13px] text-on-surface leading-tight">Srinath Choul</span>
               <div className="mt-0.5 flex justify-end">
-                <span className="text-[9px] font-bold uppercase tracking-wider font-mono-data px-1.5 py-0.5 rounded border border-[#7251b5] bg-[#4c3590] text-[#dec9e9]">
-                  {selectedRole.role}
+                <span className="text-[9px] font-bold uppercase tracking-wider font-mono-data px-1.5 py-0.5 rounded border border-outline bg-surface-variant text-on-surface-variant">
+                  Software Engineer
                 </span>
               </div>
             </div>
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${getProfileBadgeColor(session.clearance)} shadow-sm border border-[#7251b5]`}>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${getProfileBadgeColor(session.clearance)} shadow-sm border border-outline`}>
               <span className="material-symbols-outlined text-[18px]">
                 {getProfileAvatarSymbol(session.clearance)}
               </span>
@@ -633,7 +539,7 @@ function App() {
         <section className="flex-1 bg-background flex flex-col min-w-0 p-6 overflow-hidden relative">
           
           <div className="flex-1 overflow-y-auto pb-16 flex flex-col justify-start">
-            <div className={`max-w-4xl mx-auto w-full flex flex-col gap-6 transition-all duration-300 ${showLogs ? "-translate-y-8" : ""}`}>
+            <div className={`max-w-4xl mx-auto w-full flex flex-col gap-6 transition-all duration-300 ${showLogs ? "-translate-y-8 animate-none" : ""}`}>
               
               <div className="bg-surface shadow-sm rounded-2xl p-4 border border-outline flex items-center gap-3 shrink-0">
                 <span className="material-symbols-outlined text-primary text-[24px]">search</span>
