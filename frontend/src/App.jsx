@@ -299,17 +299,17 @@ function App() {
     <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200 ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
       {session.is_locked && <div className="crt-overlay"></div>}
 
-      <header className="bg-[var(--header-bg)] border-b border-outline px-6 h-16 w-full z-50 shrink-0 flex justify-between items-center text-on-surface transition-colors duration-200 shadow-sm">
+      <header className="bg-[var(--header-bg)] border-b border-outline px-6 h-16 w-full z-50 shrink-0 flex justify-between items-center text-[#dec9e9] transition-colors duration-200 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-            className="text-on-surface hover:bg-surface-variant transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+            className="text-[#dec9e9] hover:text-white hover:bg-[#7251b5] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
           >
             <span className="material-symbols-outlined text-[20px]">
               {isLeftSidebarOpen ? "menu_open" : "menu"}
             </span>
           </button>
-          <span className="font-headline-md text-headline-md font-bold text-on-surface tracking-tighter uppercase leading-none">Nuara</span>
+          <span className="font-headline-md text-headline-md font-bold text-white tracking-tighter uppercase leading-none">Nuara</span>
           {session.is_locked && (
             <>
               <div className="h-4 w-px bg-outline mx-2"></div>
@@ -322,10 +322,10 @@ function App() {
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5 bg-surface-variant p-1 rounded-lg">
+          <div className="flex items-center gap-1.5 bg-[#4c3590] p-1 rounded-lg">
             <button 
               onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {isRightSidebarOpen ? "view_sidebar" : "splitscreen"}
@@ -333,13 +333,13 @@ function App() {
             </button>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">security</span>
             </button>
             <button 
               onClick={toggleTheme}
-              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {theme === "dark" ? "light_mode" : "dark_mode"}
@@ -347,7 +347,7 @@ function App() {
             </button>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className="text-on-surface hover:bg-surface-dim transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
+              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </button>
@@ -357,9 +357,9 @@ function App() {
 
           <div className="flex items-center gap-3">
             <div className="text-right flex flex-col justify-center">
-              <span className="font-bold text-[13px] text-on-surface leading-tight">Srinath Choul</span>
+              <span className="font-bold text-[13px] text-white leading-tight">Srinath Choul</span>
               <div className="mt-0.5 flex justify-end">
-                <span className="text-[9px] font-bold uppercase tracking-wider font-mono-data px-1.5 py-0.5 rounded border border-outline bg-surface-variant text-on-surface-variant">
+                <span className="text-[9px] font-bold uppercase tracking-wider font-mono-data px-1.5 py-0.5 rounded border border-[#7251b5] bg-[#4c3590] text-[#dec9e9]">
                   Software Engineer
                 </span>
               </div>
