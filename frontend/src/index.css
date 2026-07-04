@@ -4,19 +4,19 @@
 
 :root {
   --primary: #7251b5;
-  --background: #f8fafc;
+  --background: #dec9e9;
   --surface: #ffffff;
-  --surface-dim: #f8fafc;
+  --surface-dim: #dac3e8;
   --on-surface: #0f172a;
-  --surface-variant: #f1f5f9;
-  --outline: #e2e8f0;
+  --surface-variant: #dac3e8;
+  --outline: #c19ee0;
   --surface-container-low: #ffffff;
   --surface-container-lowest: #ffffff;
-  --surface-container-high: #f8fafc;
-  --on-surface-variant: #64748b;
-  --outline-variant: #cbd5e1;
-  --primary-container: #dec9e9;
-  --secondary-container: #f1f5f9;
+  --surface-container-high: #dac3e8;
+  --on-surface-variant: #6247aa;
+  --outline-variant: #b185db;
+  --primary-container: #dac3e8;
+  --secondary-container: #dac3e8;
   --surface-container: #ffffff;
   --surface-tint: #815ac0;
   --error: #ef4444;
@@ -34,26 +34,26 @@
   --surface-bright: #ffffff;
   --on-background: #0f172a;
   --inverse-surface: #0f172a;
-  --inverse-on-surface: #f8fafc;
+  --inverse-on-surface: #dec9e9;
   --inverse-primary: #b185db;
 }
 
 .dark {
   --primary: #a06cd5;
-  --background: #090d16;
-  --surface: #0f172a;
-  --surface-dim: #090d16;
+  --background: #0a0612;
+  --surface: #140d21;
+  --surface-dim: #0a0612;
   --on-surface: #f8fafc;
-  --surface-variant: #1e293b;
-  --outline: #334155;
-  --surface-container-low: #0f172a;
-  --surface-container-lowest: #020617;
-  --surface-container-high: #1e293b;
-  --on-surface-variant: #94a3b8;
-  --outline-variant: #475569;
+  --surface-variant: #1d132e;
+  --outline: #301e4a;
+  --surface-container-low: #140d21;
+  --surface-container-lowest: #050309;
+  --surface-container-high: #1d132e;
+  --on-surface-variant: #c19ee0;
+  --outline-variant: #482e6d;
   --primary-container: #6247aa;
-  --secondary-container: #1e293b;
-  --surface-container: #0f172a;
+  --secondary-container: #1d132e;
+  --surface-container: #140d21;
   --surface-tint: #b185db;
   --error: #f43f5e;
   --error-container: #881337;
@@ -62,15 +62,15 @@
   --tertiary: #fbbf24;
   --tertiary-container: #78350f;
   --on-tertiary-container: #fde68a;
-  --on-primary: #0f172a;
+  --on-primary: #0a0612;
   --on-primary-container: #dec9e9;
   --secondary: #94a3b8;
-  --on-secondary: #0f172a;
+  --on-secondary: #0a0612;
   --on-secondary-container: #f1f5f9;
-  --surface-bright: #1e293b;
+  --surface-bright: #1d132e;
   --on-background: #f8fafc;
   --inverse-surface: #f8fafc;
-  --inverse-on-surface: #0f172a;
+  --inverse-on-surface: #0a0612;
   --inverse-primary: #a06cd5;
 }
 
@@ -79,6 +79,39 @@ body {
   background-color: var(--background);
   color: var(--on-surface);
 }
+
+.btn-glow {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px var(--primary);
+}
+
+.btn-glow:hover::after {
+  opacity: 1;
+}
+
+.btn-glow:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 6px -1px var(--primary);
+}
+
 
 ::-webkit-scrollbar {
   width: 6px;

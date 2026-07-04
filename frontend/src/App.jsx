@@ -561,7 +561,7 @@ function App() {
             {session.is_locked && (
               <button 
                 onClick={handleReset}
-                className="w-full mt-3 bg-error text-white font-label-md text-label-md uppercase tracking-wider py-2 rounded-lg hover:bg-red-600 transition-colors shadow-md flex items-center justify-center gap-1 active:scale-95 cursor-pointer"
+                className="w-full mt-3 bg-error text-white font-label-md text-label-md uppercase tracking-wider py-2 rounded-lg btn-glow flex items-center justify-center gap-1"
               >
                 <span className="material-symbols-outlined text-[16px]">warning</span> RESET DISPATCH
               </button>
@@ -595,10 +595,10 @@ function App() {
                 <button 
                   type="submit" 
                   disabled={session.is_locked || isLoading}
-                  className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer active:scale-95 ${
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
                     session.is_locked 
                       ? "bg-red-500/20 text-red-400 cursor-not-allowed border border-red-500/30" 
-                      : "bg-primary text-on-primary hover:opacity-90 shadow-sm"
+                      : "bg-primary text-on-primary btn-glow"
                   }`}
                 >
                   {isLoading ? "RUNNING..." : "QUERY"}
@@ -777,7 +777,7 @@ function App() {
                 </p>
                 <button 
                   onClick={() => switchUser("CEO_Alpha")}
-                  className="px-4 py-2 bg-primary text-on-primary font-label-md text-xs rounded-xl hover:opacity-90 transition-all cursor-pointer active:scale-95 w-full font-bold"
+                  className="px-4 py-2 bg-primary text-on-primary font-label-md text-xs rounded-xl btn-glow w-full font-bold"
                 >
                   REQUEST ELEVATION
                 </button>
@@ -941,7 +941,7 @@ function App() {
                     </div>
                     <button 
                       type="submit"
-                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg hover:opacity-90 transition-colors cursor-pointer active:scale-98 font-bold"
+                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg btn-glow font-bold"
                     >
                       Seed to Vector & Graph Stores
                     </button>
