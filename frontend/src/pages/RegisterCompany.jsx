@@ -241,7 +241,7 @@ export default function RegisterCompany({ navigate }) {
                 {!phoneVerified && (
                   <button
                     type="button"
-                    onClick={() => phone ? sendOtpCode(email, "phone") : setError("Enter mobile number.")}
+                    onClick={() => phone ? sendOtpCode(phone, "phone") : setError("Enter mobile number.")}
                     className="google-primary-btn"
                     style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap" }}
                   >
@@ -261,7 +261,7 @@ export default function RegisterCompany({ navigate }) {
                     />
                     <button
                       type="button"
-                      onClick={() => verifyOtpCode(email, phoneOtp, "phone")}
+                      onClick={() => verifyOtpCode(phone, phoneOtp, "phone")}
                       className="login-btn"
                       style={{ padding: "8px 12px", width: "auto" }}
                     >

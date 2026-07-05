@@ -272,7 +272,7 @@ export default function EmployeeSignup({ navigate }) {
                     {!phoneVerified && (
                       <button
                         type="button"
-                        onClick={() => phone ? sendOtpCode(email, "phone") : setError("Enter phone")}
+                        onClick={() => phone ? sendOtpCode(phone, "phone") : setError("Enter phone")}
                         className="google-primary-btn"
                         style={{ padding: "8px 12px", fontSize: "11px" }}
                       >
@@ -292,7 +292,7 @@ export default function EmployeeSignup({ navigate }) {
                         />
                         <button
                           type="button"
-                          onClick={() => verifyOtpCode(email, phoneOtp, "phone")}
+                          onClick={() => verifyOtpCode(phone, phoneOtp, "phone")}
                           className="login-btn"
                           style={{ padding: "8px 12px", width: "auto" }}
                         >
