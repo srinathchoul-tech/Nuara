@@ -20,7 +20,7 @@ button:disabled {
   justify-content: center;
   min-height: 100vh;
   overflow: hidden;
-  padding: 24px;
+  padding: 16px;
   background: #12051f;
 }
 
@@ -44,36 +44,37 @@ button:disabled {
 .login-card {
   position: relative;
   z-index: 2;
-  width: min(500px, 100%);
-  padding: 40px;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  width: min(440px, 100%);
+  padding: 24px 30px;
+  background: rgba(24, 12, 40, 0.2);
+  border: 1px solid rgba(219, 191, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
   color: #f8fafc;
+  backdrop-filter: blur(20px);
 }
 
 .login-card h1 {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   color: #ffffff;
-  font-size: 48px;
-  line-height: 1;
+  font-size: 28px;
+  line-height: 1.1;
   text-align: center;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
 }
 
 .subtitle {
-  margin: 0 0 30px;
+  margin: 0 0 20px;
   color: #dbeafe;
-  font-size: 20px;
+  font-size: 14px;
   text-align: center;
 }
 
 .reset-copy {
-  margin: 0 0 30px;
+  margin: 0 0 20px;
   color: #e2e8f0;
-  font-size: 20px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   text-align: center;
 }
 
@@ -81,24 +82,24 @@ button:disabled {
 .google-card input,
 .select-wrap select {
   width: 100%;
-  padding: 17px 18px;
-  border: 1px solid rgba(219, 191, 255, 0.5);
+  padding: 11px 14px;
+  border: 1px solid rgba(219, 191, 255, 0.4);
   outline: none;
-  background: rgba(24, 12, 40, 0.28);
+  background: rgba(24, 12, 40, 0.4);
   color: #ffffff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(10px);
 }
 
 .login-card input::placeholder,
 .google-card input::placeholder {
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .login-card input {
-  margin-bottom: 16px;
-  border-radius: 14px;
-  font-size: 19px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  font-size: 14px;
 }
 
 .login-card input:focus,
@@ -106,7 +107,7 @@ button:disabled {
 .select-wrap select:focus {
   border-color: #c4b5fd;
   box-shadow:
-    0 0 0 4px rgba(168, 85, 247, 0.2),
+    0 0 0 3px rgba(168, 85, 247, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -116,7 +117,7 @@ button:disabled {
 }
 
 .forgot {
-  margin: 8px 0 24px;
+  margin: 4px 0 16px;
   text-align: right;
 }
 
@@ -126,174 +127,177 @@ button:disabled {
   background: transparent;
   color: #bfdbfe;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .login-btn,
 .google-btn,
 .signup-btn {
   width: 100%;
-  padding: 17px 18px;
-  border-radius: 14px;
+  padding: 11px 14px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 19px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .login-btn {
-  border: 1px solid rgba(219, 191, 255, 0.54);
-  background: rgba(168, 85, 247, 0.22);
+  border: 1px solid rgba(219, 191, 255, 0.5);
+  background: rgba(168, 85, 247, 0.3);
   color: #ffffff;
-  box-shadow: 0 12px 34px rgba(93, 20, 160, 0.25);
-  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(93, 20, 160, 0.2);
+  backdrop-filter: blur(10px);
 }
 
 .login-btn:hover {
-  background: rgba(168, 85, 247, 0.34);
+  background: rgba(168, 85, 247, 0.45);
 }
 
 .google-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  border: 1px solid rgba(219, 191, 255, 0.5);
-  background: rgba(24, 12, 40, 0.28);
+  gap: 8px;
+  border: 1px solid rgba(219, 191, 255, 0.4);
+  background: rgba(24, 12, 40, 0.4);
   color: #ffffff;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(10px);
 }
 
 .signup-btn {
-  margin-top: 12px;
-  border: 1px solid rgba(219, 191, 255, 0.36);
-  background: rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+  border: 1px solid rgba(219, 191, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
   color: #f8fafc;
   font-weight: 600;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(10px);
 }
 
 .signup-btn:hover {
-  border-color: rgba(219, 191, 255, 0.58);
-  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(219, 191, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .divider {
-  margin: 22px 0;
+  margin: 14px 0;
   color: #cbd5e1;
-  font-size: 17px;
+  font-size: 13px;
   text-align: center;
 }
 
 .success {
-  margin-top: 20px;
-  padding: 15px;
+  margin-top: 14px;
+  padding: 10px;
   background: #dcfce7;
   color: #166534;
-  border-radius: 10px;
+  border-radius: 8px;
   text-align: center;
+  font-size: 13px;
 }
 
 .field-error,
 .google-error {
-  margin: -6px 0 14px;
-  color: #dc2626;
-  font-size: 15px;
-  line-height: 1.4;
+  margin: -6px 0 10px;
+  color: #f87171;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .back-link {
-  margin-top: 20px;
+  margin-top: 16px;
   text-align: center;
 }
 
 .google-card {
   position: relative;
   z-index: 2;
-  width: min(500px, 100%);
-  padding: 40px;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  width: min(440px, 100%);
+  padding: 24px 30px;
+  background: rgba(24, 12, 40, 0.2);
+  border: 1px solid rgba(219, 191, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
   color: #f8fafc;
+  backdrop-filter: blur(20px);
 }
 
 .google-wordmark {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   color: #ffffff;
-  font-size: 44px;
+  font-size: 32px;
   text-align: center;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
+  font-weight: 700;
 }
 
 .google-card h2 {
-  margin: 0 0 12px;
-  font-size: 38px;
-  line-height: 1.1;
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.2;
 }
 
 .google-card p {
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   color: #e2e8f0;
-  font-size: 20px;
+  font-size: 14px;
 }
 
 .google-card input {
-  margin-top: 6px;
-  border-radius: 14px;
-  font-size: 19px;
+  margin-top: 4px;
+  border-radius: 10px;
+  font-size: 14px;
 }
 
 .google-error {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
 }
 
 .bottom {
   display: flex;
   justify-content: flex-end;
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .google-primary-btn {
-  padding: 13px 30px;
-  border: 1px solid rgba(219, 191, 255, 0.54);
-  border-radius: 12px;
-  background: rgba(168, 85, 247, 0.28);
+  padding: 9px 22px;
+  border: 1px solid rgba(219, 191, 255, 0.5);
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.3);
   color: #ffffff;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(10px);
 }
 
 .google-email {
-  margin: 20px 0;
+  margin: 12px 0;
   color: #dbeafe;
-  font-size: 19px;
+  font-size: 14px;
 }
 
 .role-label {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   color: #c4b5fd;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 1.8px;
+  letter-spacing: 1px;
 }
 
 .select-wrap {
   position: relative;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .select-wrap::after {
   position: absolute;
   top: 50%;
-  right: 18px;
-  width: 10px;
-  height: 10px;
-  border-right: 3px solid #c4b5fd;
-  border-bottom: 3px solid #c4b5fd;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #c4b5fd;
+  border-bottom: 2px solid #c4b5fd;
   content: "";
   pointer-events: none;
   transform: translateY(-65%) rotate(45deg);
@@ -301,9 +305,9 @@ button:disabled {
 
 .select-wrap select {
   appearance: none;
-  border-radius: 16px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 400;
   letter-spacing: 0;
 }

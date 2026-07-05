@@ -634,6 +634,40 @@ function App() {
                   )}
                 </li>
               </ul>
+
+              <div className="h-px bg-outline/40 my-3"></div>
+              <div className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant font-bold px-2 mb-1.5">Spotlight Innovations</div>
+              <div className="space-y-2 px-1">
+                <div className="p-2.5 bg-primary/10 border border-outline/30 rounded-xl">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-white mb-0.5">
+                    <span className="material-symbols-outlined text-[14px] text-purple-300">security_update_good</span>
+                    1. RAG Safety Valve
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant/80 leading-relaxed">
+                    <strong>Permission-Integrated Intelligence</strong> validates clearance levels before vector retrieval, blocking unauthorized requests.
+                  </p>
+                </div>
+                
+                <div className="p-2.5 bg-primary/10 border border-outline/30 rounded-xl">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-white mb-0.5">
+                    <span className="material-symbols-outlined text-[14px] text-purple-300">receipt_long</span>
+                    2. Agent Transparency
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant/80 leading-relaxed">
+                    Exposes step-by-step Planning, Search, and Synthesis chains dynamically inside the developer logs terminal for verification.
+                  </p>
+                </div>
+
+                <div className="p-2.5 bg-primary/10 border border-outline/30 rounded-xl">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-white mb-0.5">
+                    <span className="material-symbols-outlined text-[14px] text-purple-300">hub</span>
+                    3. Decision Memory
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant/80 leading-relaxed">
+                    Uses Neo4j relational maps to document historical architectural decisions and pivots, keeping logs clear.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="p-4 border-t border-outline bg-surface-dim">

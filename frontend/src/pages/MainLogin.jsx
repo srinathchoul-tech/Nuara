@@ -33,6 +33,45 @@ export default function MainLogin({ navigate, onLoginSuccess }) {
         <h1>AI Company Brain</h1>
         <p className="subtitle">Sign in to continue</p>
 
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px", padding: "10px", borderRadius: "10px", border: "1px solid rgba(219, 191, 255, 0.15)", background: "rgba(24, 12, 40, 0.3)" }}>
+          <div style={{ fontSize: "10px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", color: "#c4b5fd", textAlign: "center", marginBottom: "4px" }}>Quick Demo Access</div>
+          <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("engineer@nexusbrain.com");
+                setPassword("password123");
+                setRole("EMPLOYEE");
+              }}
+              style={{ padding: "4px 8px", background: "rgba(168, 85, 247, 0.2)", border: "1px solid rgba(219, 191, 255, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#ffffff", cursor: "pointer", transition: "all 0.2s" }}
+            >
+              💻 Engineer
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("hr@nexusbrain.com");
+                setPassword("password123");
+                setRole("HR");
+              }}
+              style={{ padding: "4px 8px", background: "rgba(168, 85, 247, 0.2)", border: "1px solid rgba(219, 191, 255, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#ffffff", cursor: "pointer", transition: "all 0.2s" }}
+            >
+              👥 HR Manager
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("ceo@nexusbrain.com");
+                setPassword("password123");
+                setRole("CEO");
+              }}
+              style={{ padding: "4px 8px", background: "rgba(168, 85, 247, 0.2)", border: "1px solid rgba(219, 191, 255, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#ffffff", cursor: "pointer", transition: "all 0.2s" }}
+            >
+              👑 Executive
+            </button>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <label className="role-label" htmlFor="loginRole">
             LOGIN AS
