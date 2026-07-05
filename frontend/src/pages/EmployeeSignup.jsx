@@ -228,8 +228,8 @@ export default function EmployeeSignup({ navigate }) {
                       <button
                         type="button"
                         onClick={() => email ? sendOtpCode(email, "email") : setError("Enter email")}
-                        className="google-primary-btn"
-                        style={{ padding: "8px 12px", fontSize: "11px" }}
+                        className="login-btn"
+                        style={{ padding: "8px 12px", fontSize: "11px", width: "auto", minWidth: "90px" }}
                       >
                         Send Code
                       </button>
@@ -273,8 +273,8 @@ export default function EmployeeSignup({ navigate }) {
                       <button
                         type="button"
                         onClick={() => phone ? sendOtpCode(phone, "phone") : setError("Enter phone")}
-                        className="google-primary-btn"
-                        style={{ padding: "8px 12px", fontSize: "11px" }}
+                        className="login-btn"
+                        style={{ padding: "8px 12px", fontSize: "11px", width: "auto", minWidth: "90px" }}
                       >
                         Send Code
                       </button>

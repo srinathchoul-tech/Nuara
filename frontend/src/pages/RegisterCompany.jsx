@@ -29,6 +29,7 @@ export default function RegisterCompany({ navigate }) {
   const [success, setSuccess] = useState(false);
 
   const sendOtpCode = async (target, type) => {
+    console.log("sendOtpCode invoked with target:", target, "type:", type);
     setError("");
     try {
       const res = await fetch("http://127.0.0.1:8000/api/auth/send-otp", {
@@ -36,8 +37,10 @@ export default function RegisterCompany({ navigate }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: target, type: type })
       });
+      console.log("sendOtpCode response status:", res.status);
       if (res.ok) {
         const data = await res.json();
+        console.log("sendOtpCode response data:", data);
         if (type === "email") {
           setEmailSent(true);
           setSimulatedEmailOtp(data.code);
@@ -45,6 +48,8 @@ export default function RegisterCompany({ navigate }) {
           setPhoneSent(true);
           setSimulatedPhoneOtp(data.code);
         }
+      } else {
+        setError("Error response from server.");
       }
     } catch (err) {
       console.error(err);
@@ -53,6 +58,7 @@ export default function RegisterCompany({ navigate }) {
   };
 
   const verifyOtpCode = async (target, code, type) => {
+    console.log("verifyOtpCode invoked with target:", target, "code:", code, "type:", type);
     setError("");
     try {
       const res = await fetch("http://127.0.0.1:8000/api/auth/verify-otp", {
@@ -60,6 +66,7 @@ export default function RegisterCompany({ navigate }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: target, code: code })
       });
+      console.log("verifyOtpCode response status:", res.status);
       if (res.ok) {
         if (type === "email") {
           setEmailVerified(true);
@@ -197,8 +204,8 @@ export default function RegisterCompany({ navigate }) {
                   <button
                     type="button"
                     onClick={() => email ? sendOtpCode(email, "email") : setError("Enter admin email.")}
-                    className="google-primary-btn"
-                    style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap" }}
+                    className="login-btn"
+                    style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap", width: "auto", minWidth: "90px" }}
                   >
                     Send OTP
                   </button>
@@ -242,8 +249,8 @@ export default function RegisterCompany({ navigate }) {
                   <button
                     type="button"
                     onClick={() => phone ? sendOtpCode(phone, "phone") : setError("Enter mobile number.")}
-                    className="google-primary-btn"
-                    style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap" }}
+                    className="login-btn"
+                    style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap", width: "auto", minWidth: "90px" }}
                   >
                     Send SMS OTP
                   </button>
