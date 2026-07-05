@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 from backend.database import init_db, get_db_connection
 from backend.postgres_db import (
     get_user_role, write_audit_log, read_audit_logs, add_document, 
