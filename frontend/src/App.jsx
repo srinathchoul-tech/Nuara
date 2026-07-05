@@ -288,19 +288,18 @@ function App() {
   }, []);
 
   const handleLoginSuccess = async (email, role) => {
+    setIsAuthenticated(true);
+    window.location.hash = "";
     try {
       await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role })
       });
-      await fetchSession();
-      await fetchLogs();
-      setIsAuthenticated(true);
-      window.location.hash = "";
+      fetchSession();
+      fetchLogs();
     } catch (err) {
       console.error(err);
-      setIsAuthenticated(true);
     }
   };
 

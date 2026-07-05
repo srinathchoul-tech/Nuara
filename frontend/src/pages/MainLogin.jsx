@@ -30,7 +30,7 @@ export default function MainLogin({ navigate, onLoginSuccess }) {
   return (
     <AuthBackground>
       <section className="login-card">
-        <h1>AI Company Brain</h1>
+        <h1>Nuara</h1>
         <p className="subtitle">Sign in to continue</p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px", padding: "10px", borderRadius: "10px", border: "1px solid rgba(219, 191, 255, 0.15)", background: "rgba(24, 12, 40, 0.3)" }}>
