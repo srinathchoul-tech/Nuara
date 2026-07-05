@@ -52,6 +52,10 @@ function App() {
   const [ingestLoading, setIngestLoading] = useState(false);
   const [pendingMembers, setPendingMembers] = useState([]);
   const [selectedRoles, setSelectedRoles] = useState({});
+  const [activeOrchestrationTool, setActiveOrchestrationTool] = useState(null);
+  const [pendingActions, setPendingActions] = useState([]);
+  const [reviewDraft, setReviewDraft] = useState(null);
+  const [dnaTimeline, setDnaTimeline] = useState(null);
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -388,18 +392,44 @@ function App() {
     }
   }, [copilotMessages, copilotLoading]);
 
-  const suggestionChips = [
-    { label: "🔐 Security Model", query: "How does data security work?" },
-    { label: "🛠️ Tech Stack", query: "What is the core tech stack?" },
-    { label: "👥 User Roles", query: "How many roles are in this website?" },
-    { label: "📊 Org Graph", query: "What is the Organizational Graph?" }
-  ];
+  const getSuggestionChips = (role) => {
+    const r = role ? role.toLowerCase() : "";
+    if (r === "surgeon" || r === "medical clerk") {
+      return [
+        { label: "📁 EHR Records", query: "Show patient treatment history for EHR #302" },
+        { label: "💳 Insurance Gaps", query: "What claims are missing code mapping tags?" },
+        { label: "🛏️ Bed Audits", query: "Show logs for outpatient capacity planning" }
+      ];
+    } else if (r === "officer") {
+      return [
+        { label: "📜 Search Warrants", query: "Show evidence files matching precinct C search warrant" },
+        { label: "🚨 Case Correlation", query: "Are there matching suspects in other theft cases?" },
+        { label: "⚖️ FIR Logs", query: "Draft FIR for Sarah Connor case #1029" }
+      ];
+    } else {
+      return [
+        { label: "🔐 Security Model", query: "How does data security work?" },
+        { label: "🛠️ Tech Stack", query: "What is the core tech stack?" },
+        { label: "👥 User Roles", query: "How many roles are in this website?" }
+      ];
+    }
+  };
 
   const handleCopilotSendSimulated = async (queryText) => {
     if (!queryText.trim()) return;
 
     setCopilotMessages(prev => [...prev, { sender: "user", text: queryText }]);
     setCopilotLoading(true);
+
+    const r = session.role ? session.role.toLowerCase() : "";
+    const selectedTool = r === "surgeon" || r === "medical clerk"
+      ? "Medical Coder Tool"
+      : r === "officer"
+        ? "FIR Generator Tool"
+        : "Sprint Planner Tool";
+
+    setActiveOrchestrationTool(selectedTool);
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     try {
       const res = await fetch(`${API_BASE}/onboarding/chat`, {
@@ -409,7 +439,15 @@ function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        setCopilotMessages(prev => [...prev, { sender: "system", text: data.response }]);
+        let finalResponse = data.response;
+        if (r === "surgeon" || r === "medical clerk") {
+          finalResponse += `\n\nCitations: [EHR_Patient_302.docx](file:///c:/Vynedam_2k26/backend/database.db), [Billing_Guidelines_v1.docx](file:///c:/Vynedam_2k26/backend/database.db)`;
+        } else if (r === "officer") {
+          finalResponse += `\n\nCitations: [Theft_FIR_1029.pdf](file:///c:/Vynedam_2k26/backend/database.db), [Precinct_Scanner_Log.csv](file:///c:/Vynedam_2k26/backend/database.db)`;
+        } else {
+          finalResponse += `\n\nCitations: [Architecture_v2.docx](file:///c:/Vynedam_2k26/backend/database.db), [#eng_leads](file:///c:/Vynedam_2k26/backend/database.db)`;
+        }
+        setCopilotMessages(prev => [...prev, { sender: "system", text: finalResponse }]);
       } else {
         setCopilotMessages(prev => [...prev, { sender: "system", text: "Error: Copilot gateway unreachable." }]);
       }
@@ -418,6 +456,7 @@ function App() {
       setCopilotMessages(prev => [...prev, { sender: "system", text: "Connection error. Please try again." }]);
     } finally {
       setCopilotLoading(false);
+      setActiveOrchestrationTool(null);
     }
   };
 
@@ -475,84 +514,145 @@ function App() {
     return <AdminDashboard onLogout={handleLogout} />;
   }
 
+
+  const getVaultLabel = (key, role) => {
+    const r = role ? role.toLowerCase() : "";
+    if (r === "surgeon" || r === "medical clerk") {
+      if (key === "drives") return "Patient Records (EHR)";
+      if (key === "wikis") return "Insurance Databases";
+      if (key === "tickets") return "Bed Management Logs";
+      return "Medical Chat Logs";
+    } else if (r === "officer") {
+      if (key === "drives") return "Case Files";
+      if (key === "wikis") return "FIR Records";
+      if (key === "tickets") return "Evidence Logs";
+      return "Precinct Chat Logs";
+    } else {
+      if (key === "drives") return "Drives";
+      if (key === "wikis") return "Wikis";
+      if (key === "tickets") return "Tickets";
+      return "Chat Logs";
+    }
+  };
+
+  const getVaultLabels = (role) => {
+    const r = role ? role.toLowerCase() : "";
+    if (r === "surgeon" || r === "medical clerk") {
+      return ["Patient Records (EHR)", "Insurance Databases", "Bed Management Logs"];
+    } else if (r === "officer") {
+      return ["Case Files", "FIR Records", "Evidence Logs"];
+    } else {
+      return ["Github Repos", "Jira Tickets", "Slack Logs"];
+    }
+  };
+
+  const getNeuralInsights = (role) => {
+    const r = role ? role.toLowerCase() : "";
+    if (r === "surgeon" || r === "medical clerk") {
+      return [
+        { title: "EHR Billing Notice", message: "Patient John Doe's bypass claim #302 is missing diagnosis code. Draft an inquiry?" },
+        { title: "Capacity Alert", message: "Outpatient surgery queue expected to peak at Main Branch on Monday. Adjust staff levels?" }
+      ];
+    } else if (r === "officer") {
+      return [
+        { title: "MO Correlation Match", message: "Alert: Similar theft MO detected in case from 2022. Compare scanner reports?" },
+        { title: "Precinct Log Variance", message: "Notice: Evidence log variance detected in Precinct Branch B records." }
+      ];
+    } else {
+      return [
+        { title: "Sprint Outdated Wiki", message: "Project Alpha hit a milestone in Jira, but the Wiki is outdated. Generate summary?" },
+        { title: "Security Alert", message: "Warning: Potential credential exposure in slack_#eng_leads logs. Initiate trace?" }
+      ];
+    }
+  };
+
+  const getPendingActions = (role) => {
+    const r = role ? role.toLowerCase() : "";
+    if (r === "surgeon" || r === "medical clerk") {
+      return [
+        {
+          id: "act_hc_1",
+          title: "Draft Medical Billing Summary",
+          description: "Detailed treatment billing for EHR bypass surgery Patient X.",
+          draft: "Diagnosis code: I25.10. Procedure code: 33510. Total billing: $48,200. Prepared for Main Branch insurance desk approval.",
+          tool: "Medical Coder Tool"
+        }
+      ];
+    } else if (r === "officer") {
+      return [
+        {
+          id: "act_pol_1",
+          title: "Draft FIR Form for Case #1029",
+          description: "First Information Report document details for Precinct B theft.",
+          draft: "FIR under section 154 CrPC. Complainant: Sarah Connor. Accused: Unknown. Offense: Asset theft.",
+          tool: "FIR Generator Tool"
+        }
+      ];
+    } else {
+      return [
+        {
+          id: "act_tech_1",
+          title: "Draft Technical Spec for RAG",
+          description: "Architectural spec sheet mapping tenant-level retrieval gateways.",
+          draft: "Specification Document: RAG Isolation Gateway. Security filters enforce strict company checks.",
+          tool: "Sprint Planner Tool"
+        }
+      ];
+    }
+  };
+
+  const handleExecuteAction = (action) => {
+    setActiveOrchestrationTool(action.tool);
+    setTimeout(() => {
+      setActiveOrchestrationTool(null);
+      alert(`Action successfully verified and executed via ${action.tool}!`);
+    }, 1800);
+  };
+
   return (
     <div className={`h-screen w-screen overflow-hidden flex flex-col font-body-sm relative select-none bg-background text-on-surface transition-colors duration-200 ${session.is_locked ? "selection:bg-error selection:text-on-error" : "selection:bg-primary-container selection:text-on-primary-container"}`}>
       {session.is_locked && <div className="crt-overlay"></div>}
 
       <header className="bg-[var(--header-bg)] border-b border-outline px-6 h-16 w-full z-50 shrink-0 flex justify-between items-center text-[#dec9e9] transition-colors duration-200 shadow-sm">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-            className="text-[#dec9e9] hover:text-white hover:bg-[#7251b5] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+            className="text-[#dec9e9] hover:text-white p-1.5 rounded-md hover:bg-surface-variant transition-colors flex items-center justify-center cursor-pointer"
+            title="Toggle Left Sidebar"
           >
-            <span className="material-symbols-outlined text-[20px]">
-              {isLeftSidebarOpen ? "menu_open" : "menu"}
-            </span>
+            <span className="material-symbols-outlined text-[20px]">menu</span>
           </button>
-          <span className="font-headline-md text-headline-md font-bold text-white tracking-tighter uppercase leading-none">Nuara</span>
-          {session.is_locked && (
-            <>
-              <div className="h-4 w-px bg-outline mx-2"></div>
-              <span className="font-mono-data text-mono-data text-error uppercase tracking-widest flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
-                SYSTEM_LOCKDOWN_ACTIVE
-              </span>
-            </>
-          )}
+          <span className="text-[15px] font-bold tracking-widest text-[#dec9e9] uppercase">NUARA</span>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5 bg-[#4c3590] p-1 rounded-lg">
-            <button 
-              onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {isRightSidebarOpen ? "view_sidebar" : "splitscreen"}
-              </span>
-            </button>
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[20px]">security</span>
-            </button>
-            <button 
-              onClick={toggleTheme}
-              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {theme === "dark" ? "light_mode" : "dark_mode"}
-              </span>
-            </button>
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-[#dec9e9] hover:text-white hover:bg-[#6247aa] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[20px]">settings</span>
-            </button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs uppercase text-slate-400 font-mono-data">Tenant:</span>
+            <span className="text-xs font-bold text-white px-2 py-0.5 border border-[#d4af37]/30 rounded bg-purple-950/20 font-mono-data text-[#d4af37]">
+              {localStorage.getItem("companyName") || "Nuara"}
+            </span>
           </div>
-          
-          <div className="h-8 w-px bg-outline"></div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-right flex flex-col justify-center">
-              <span className="font-bold text-[13px] text-white leading-tight">Srinath Choul</span>
-              <div className="mt-0.5 flex justify-end">
-                <span className="text-[9px] font-bold uppercase tracking-wider font-mono-data px-1.5 py-0.5 rounded border border-[#7251b5] bg-[#4c3590] text-[#dec9e9]">
-                  Software Engineer
-                </span>
-              </div>
-            </div>
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center bg-primary text-[#dec9e9] shadow-sm border border-outline`}>
-              <span className="material-symbols-outlined text-[18px]">engineering</span>
-            </div>
-            <button 
-              onClick={() => {
-                localStorage.removeItem("loggedUser");
-                localStorage.removeItem("loginRole");
-                setIsAuthenticated(false);
-              }}
+          <button
+            onClick={() => setDnaTimeline(true)}
+            className="px-3 py-1.5 bg-[#6247aa]/40 hover:bg-[#7251b5] border border-[#d4af37]/30 rounded-lg text-xs font-bold text-[#d4af37] transition-all cursor-pointer flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">history</span>
+            Project DNA Onboarding
+          </button>
+
+          <div className="h-4 w-px bg-outline/40"></div>
+
+          <div className="flex items-center gap-3 border border-outline bg-surface-variant/30 px-3 py-1.5 rounded-xl text-[12px] relative group font-semibold">
+            <span className="material-symbols-outlined text-[18px] text-[#dec9e9]">
+              {getProfileAvatarSymbol(session.clearance)}
+            </span>
+            <span className="text-[#dec9e9]">{localStorage.getItem("loggedUser") || "User"}</span>
+            <span className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ${getProfileBadgeColor(session.clearance)}`}>
+              {session.role || "EMPLOYEE"}
+            </span>
+            <button
+              onClick={handleLogout}
               className="text-[#dec9e9] hover:text-white hover:bg-[#7251b5] transition-colors p-1.5 rounded-md flex items-center justify-center cursor-pointer active:scale-95 ml-1"
               title="Logout"
             >
@@ -580,9 +680,8 @@ function App() {
                       <span className="material-symbols-outlined text-[18px]">
                         {expandedFolders.drives ? "folder_open" : "folder"}
                       </span>
-                      <span className="text-[13px]">Drives</span>
+                      <span className="text-[13px]">{getVaultLabel("drives", session.role)}</span>
                     </div>
-                    <span className="text-[10px] opacity-75 font-semibold font-mono-data">PUBLIC</span>
                   </div>
                   {expandedFolders.drives && (
                     <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
@@ -609,9 +708,8 @@ function App() {
                       <span className="material-symbols-outlined text-[18px]">
                         {expandedFolders.wikis ? "folder_open" : "folder"}
                       </span>
-                      <span className="text-[13px]">Wikis</span>
+                      <span className="text-[13px]">{getVaultLabel("wikis", session.role)}</span>
                     </div>
-                    <span className="text-[10px] opacity-75 font-semibold font-mono-data">ENG</span>
                   </div>
                   {expandedFolders.wikis && (
                     <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
@@ -625,9 +723,6 @@ function App() {
                           <span className="truncate">{doc.name}</span>
                         </li>
                       ))}
-                      {dbDocs.filter(d => d.source_type === "Wiki").length === 0 && (
-                        <li className="text-[11px] text-on-surface-variant/60 py-1.5 px-2 italic">No records</li>
-                      )}
                     </ul>
                   )}
                 </li>
@@ -641,9 +736,8 @@ function App() {
                       <span className="material-symbols-outlined text-[18px]">
                         {expandedFolders.tickets ? "folder_open" : "folder"}
                       </span>
-                      <span className="text-[13px]">Tickets</span>
+                      <span className="text-[13px]">{getVaultLabel("tickets", session.role)}</span>
                     </div>
-                    <span className="text-[10px] opacity-75 font-semibold font-mono-data">HR</span>
                   </div>
                   {expandedFolders.tickets && (
                     <ul className="ml-6 mt-1 space-y-0.5 border-l border-outline pl-3">
@@ -653,13 +747,10 @@ function App() {
                           onClick={() => handleFileClick(doc.id)}
                           className="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer py-1.5 px-2 rounded-md hover:bg-surface-variant transition-all text-[12px] truncate"
                         >
-                          <span className="material-symbols-outlined text-[14px] shrink-0">confirmation_number</span> 
+                          <span className="material-symbols-outlined text-[14px] shrink-0">description</span> 
                           <span className="truncate">{doc.name}</span>
                         </li>
                       ))}
-                      {dbDocs.filter(d => d.source_type === "Ticket").length === 0 && (
-                        <li className="text-[11px] text-on-surface-variant/60 py-1.5 px-2 italic">No records</li>
-                      )}
                     </ul>
                   )}
                 </li>
@@ -841,6 +932,69 @@ function App() {
                       <span className="text-[9px] text-on-surface-variant/75 font-mono-data">
                         {results && results.status === "breach" ? "Halted" : results ? "Success" : "Ready"}
                       </span>
+                    </div>
+                  </div>
+                  {activeOrchestrationTool && (
+                    <div className="mt-4 p-2 bg-[#d4af37]/20 border border-[#d4af37]/40 rounded-xl flex items-center justify-center gap-2 animate-pulse text-xs text-[#d4af37]">
+                      <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                      <span>Active Toolchain: <strong>{activeOrchestrationTool}</strong> executing model requests...</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 shrink-0">
+                  <div className="lg:col-span-2 bg-surface border border-outline rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-3">
+                        <span className="material-symbols-outlined text-[18px]">psychology</span>
+                        Neural Insights & Briefings
+                      </div>
+                      <div className="space-y-3">
+                        {getNeuralInsights(session.role).map((insight, idx) => (
+                          <div key={idx} className="p-3 bg-purple-950/20 border border-[#d4af37]/20 rounded-xl flex items-start gap-2.5 text-xs text-on-surface">
+                            <span className="material-symbols-outlined text-[#d4af37] text-[16px] mt-0.5">info</span>
+                            <div>
+                              <span className="font-bold text-[#dec9e9] block mb-0.5">{insight.title}</span>
+                              <span className="text-on-surface-variant leading-relaxed">{insight.message}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-1 bg-surface border border-[#d4af37]/30 rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-[#d4af37] font-bold text-xs uppercase tracking-wider mb-3">
+                        <span className="material-symbols-outlined text-[18px]">rule</span>
+                        Action & Approval Hub
+                      </div>
+                      <div className="space-y-3">
+                        {getPendingActions(session.role).map((action, idx) => (
+                          <div key={idx} className="p-3 border border-outline rounded-xl flex flex-col gap-2 text-xs">
+                            <div>
+                              <span className="font-bold text-white block">{action.title}</span>
+                              <span className="text-[10px] text-on-surface-variant leading-tight block mt-0.5">{action.description}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setReviewDraft(action)}
+                                className="px-2 py-1 bg-surface-variant text-on-surface-variant rounded text-[10px] font-bold hover:bg-opacity-95 cursor-pointer flex-1"
+                              >
+                                Review Draft
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleExecuteAction(action)}
+                                className="px-2 py-1 bg-primary text-on-primary rounded text-[10px] font-bold hover:bg-opacity-95 cursor-pointer flex-1"
+                              >
+                                Execute
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1283,7 +1437,7 @@ function App() {
                 <div className="p-3 bg-surface-variant/40 border border-outline rounded-xl mt-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">Suggested Topics</div>
                   <div className="grid grid-cols-2 gap-2">
-                    {suggestionChips.map((chip, idx) => (
+                    {getSuggestionChips(session.role).map((chip, idx) => (
                       <button
                         key={idx}
                         type="button"
@@ -1335,6 +1489,127 @@ function App() {
           </span>
         </button>
       </div>
+
+      {reviewDraft && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-surface border border-[#d4af37] p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-outline pb-3">
+              <h3 className="font-bold text-[#d4af37] uppercase tracking-wider text-xs flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">find_in_page</span>
+                Review Pending Action Draft
+              </h3>
+              <button onClick={() => setReviewDraft(null)} className="text-on-surface-variant hover:text-white cursor-pointer">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            <div className="bg-[#0a0612] p-4 rounded-xl border border-outline/30 text-xs font-mono-data text-slate-300 leading-relaxed max-h-60 overflow-y-auto select-text">
+              {reviewDraft.draft}
+            </div>
+            <div className="flex gap-3 justify-end pt-1">
+              <button 
+                type="button"
+                onClick={() => setReviewDraft(null)}
+                className="px-4 py-2 bg-surface-variant text-on-surface rounded-xl text-xs font-bold hover:bg-opacity-90 cursor-pointer"
+              >
+                Close
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  setReviewDraft(null);
+                  handleExecuteAction(reviewDraft);
+                }}
+                className="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-opacity-95 cursor-pointer btn-glow text-white font-bold"
+              >
+                Confirm & Execute
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dnaTimeline && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-surface border border-[#d4af37] p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-outline pb-3">
+              <h3 className="font-bold text-[#d4af37] uppercase tracking-wider text-xs flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">history</span>
+                Project DNA Onboarding Timeline
+              </h3>
+              <button onClick={() => setDnaTimeline(false)} className="text-on-surface-variant hover:text-white cursor-pointer">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+              {session.role && (session.role.toLowerCase() === "surgeon" || session.role.toLowerCase() === "medical clerk") ? (
+                <>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">6 Months Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">EHR Standardized Billing Codes Adopted</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">System configured to automatically validate Patient records against ICD-10 medical coding standards.</p>
+                  </div>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">3 Months Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">Surgeon Clearance Gate Implemented</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Medical vault clearances isolated to block non-surgeon employee logs from referencing clinical bypass details.</p>
+                  </div>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">1 Month Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">Insurance Mapping Vectors Synced</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Integrated medical billing indexes inside vector coordinates for proactive semantic search analysis.</p>
+                  </div>
+                </>
+              ) : session.role && session.role.toLowerCase() === "officer" ? (
+                <>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">6 Months Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">Precinct Case File Repository Configured</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Standard case report indexing folders created. Database locked under law enforcement namespace isolation.</p>
+                  </div>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">3 Months Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">Evidence Node Synapses Linked</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Fingerprint scans and evidence logs integrated with Neo4j relational networks for cross-Precinct case maps.</p>
+                  </div>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">1 Month Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">FIR Toolchain Integrations Completed</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Connected the FIR planning agents to allow automated summary drafting on evidence index matching.</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">6 Months Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">Semantic RAG Retrievers Built</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Constructed core dense vector search embeddings pipeline targeting latency under 2 seconds.</p>
+                  </div>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">3 Months Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">RAG Safety Clearance Engine Deployed</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Constructed pre-retrieval security filter systems to intercept file searches matching user context vaults.</p>
+                  </div>
+                  <div className="border-l-2 border-[#d4af37] pl-4 relative">
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                    <div className="text-[10px] text-slate-400 font-mono-data">1 Month Ago</div>
+                    <div className="text-xs text-white font-bold mt-0.5">Multi-Tenant Vault Schema Configured</div>
+                    <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">Updated tables to separate documents by company tenant namespace in postgres metadata tables.</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
