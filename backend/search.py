@@ -16,9 +16,18 @@ ROLE_CLEARANCE = {
     "Executive": "EXEC"
 }
 
-def is_authorized(user_role, doc_access):
-    user_clearance = ROLE_CLEARANCE.get(user_role, "PUBLIC")
-    return CLEARANCE_HIERARCHY.get(user_clearance, 0) >= CLEARANCE_HIERARCHY.get(doc_access, 0)
+def is_authorized(user_company, user_role, doc_source, doc_access):
+    if user_role == "ADMIN":
+        return True
+    from backend.postgres_db import get_role_permissions
+    perms = get_role_permissions(user_company)
+    allowed_folders = perms.get(user_role, [])
+    doc_src_lower = doc_source.lower()
+    for allowed in allowed_folders:
+        allowed_lower = allowed.lower()
+        if allowed_lower in doc_src_lower or doc_src_lower in allowed_lower:
+            return True
+    return False
 
 def search_rag(query_text, email):
     from backend.postgres_db import get_user_by_email
@@ -55,7 +64,7 @@ def search_rag(query_text, email):
         if doc["id"] in hit_ids:
             doc_comp = doc.get("company_name", "Nuara")
             if doc_comp == user_company:
-                if is_authorized(user_role, doc["access_level"]):
+                if is_authorized(user_company, user_role, doc["source_type"], doc["access_level"]):
                     matched_docs.append(doc)
                 
     write_audit_log("INFO", "Retrieval", f"Retrieval completed. Found {len(matched_docs)} documents.")

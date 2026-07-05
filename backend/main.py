@@ -8,7 +8,8 @@ from backend.postgres_db import (
     get_user_role, write_audit_log, read_audit_logs, add_document, 
     update_document_permission, get_all_documents, get_user_by_email, 
     add_company, get_companies_list, create_otp, check_otp, 
-    create_user_profile, get_pending_members, approve_member_role
+    create_user_profile, get_pending_members, approve_member_role,
+    get_roles, add_role, delete_role, get_role_permissions, update_role_permissions
 )
 from backend.search import search_rag
 from backend.agent import simulate_agent_chain
@@ -233,7 +234,40 @@ def approve_member(req: ApproveMemberRequest):
     
     write_audit_log("INFO", "AdminConsole", f"Employee {req.email} approved by admin. Assigned: {req.assigned_role}")
     return {"status": "success"}
+class RoleRequest(BaseModel):
+    company_name: str
+    role_name: str
 
+class AclRequest(BaseModel):
+    company_name: str
+    role_name: str
+    folders: list
+
+@app.get("/api/admin/roles")
+def api_get_roles(company_name: str):
+    return get_roles(company_name)
+
+@app.post("/api/admin/roles")
+def api_add_role(req: RoleRequest):
+    add_role(req.company_name, req.role_name)
+    write_audit_log("INFO", "AdminConsole", f"Role '{req.role_name}' registered for {req.company_name}")
+    return {"status": "success"}
+
+@app.delete("/api/admin/roles")
+def api_delete_role(company_name: str, role_name: str):
+    delete_role(company_name, role_name)
+    write_audit_log("INFO", "AdminConsole", f"Role '{role_name}' deleted for {company_name}")
+    return {"status": "success"}
+
+@app.get("/api/admin/acls")
+def api_get_acls(company_name: str):
+    return get_role_permissions(company_name)
+
+@app.post("/api/admin/acls")
+def api_update_acls(req: AclRequest):
+    update_role_permissions(req.company_name, req.role_name, req.folders)
+    write_audit_log("INFO", "AdminConsole", f"Permissions updated for role '{req.role_name}' in {req.company_name}")
+    return {"status": "success"}
 @app.get("/api/companies")
 def get_companies():
     return get_companies_list()

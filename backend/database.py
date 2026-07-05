@@ -26,6 +26,8 @@ def init_db():
     cursor.execute("DROP TABLE IF EXISTS onboarding_chats")
     cursor.execute("DROP TABLE IF EXISTS companies")
     cursor.execute("DROP TABLE IF EXISTS otp_verifications")
+    cursor.execute("DROP TABLE IF EXISTS roles")
+    cursor.execute("DROP TABLE IF EXISTS role_permissions")
     
     cursor.execute("""
     CREATE TABLE companies (
@@ -41,6 +43,23 @@ def init_db():
         email TEXT PRIMARY KEY,
         code TEXT,
         verified INTEGER
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE roles (
+        company_name TEXT,
+        role_name TEXT,
+        PRIMARY KEY (company_name, role_name)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE role_permissions (
+        company_name TEXT,
+        role_name TEXT,
+        folder_name TEXT,
+        PRIMARY KEY (company_name, role_name, folder_name)
     )
     """)
 
@@ -122,6 +141,27 @@ def init_db():
     """)
     
     cursor.execute("INSERT INTO companies VALUES (?, ?, ?, ?)", ("c1", "Nuara", "AI Tech", "Main Branch"))
+    
+    cursor.executemany("INSERT INTO roles VALUES (?, ?)", [
+        ("Nuara", "Standard_Eng"),
+        ("Nuara", "HR_Manager"),
+        ("Nuara", "Executive"),
+        ("Nuara", "Surgeon")
+    ])
+
+    cursor.executemany("INSERT INTO role_permissions VALUES (?, ?, ?)", [
+        ("Nuara", "Standard_Eng", "Drive"),
+        ("Nuara", "Standard_Eng", "Wiki"),
+        ("Nuara", "HR_Manager", "Drive"),
+        ("Nuara", "HR_Manager", "Wiki"),
+        ("Nuara", "HR_Manager", "Tickets"),
+        ("Nuara", "Executive", "Drive"),
+        ("Nuara", "Executive", "Wiki"),
+        ("Nuara", "Executive", "Tickets"),
+        ("Nuara", "Executive", "Chat"),
+        ("Nuara", "Surgeon", "Drive"),
+        ("Nuara", "Surgeon", "Wiki")
+    ])
     
     cursor.executemany("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
         ("engineer@nexusbrain.com", "password123", "Srinath", "", "Choul", "1234567890", "Nuara", "Main Branch", "EMPLOYEE", "Standard_Eng", "ENG", "APPROVED"),

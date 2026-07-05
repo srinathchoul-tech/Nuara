@@ -243,3 +243,87 @@ def update_document_permission(doc_id, access_level):
     finally:
         conn.close()
 
+def get_roles(company_name):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("SELECT role_name FROM roles WHERE company_name = ?", (company_name,))
+            rows = cursor.fetchall()
+            return [r["role_name"] for r in rows]
+        else:
+            cursor.execute("SELECT role_name FROM roles WHERE company_name = %s", (company_name,))
+            rows = cursor.fetchall()
+            return [r[0] for r in rows]
+    finally:
+        conn.close()
+
+def add_role(company_name, role_name):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("INSERT INTO roles (company_name, role_name) VALUES (?, ?)", (company_name, role_name))
+        else:
+            cursor.execute("INSERT INTO roles (company_name, role_name) VALUES (%s, %s)", (company_name, role_name))
+        conn.commit()
+    finally:
+        conn.close()
+
+def delete_role(company_name, role_name):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("DELETE FROM roles WHERE company_name = ? AND role_name = ?", (company_name, role_name))
+            cursor.execute("DELETE FROM role_permissions WHERE company_name = ? AND role_name = ?", (company_name, role_name))
+        else:
+            cursor.execute("DELETE FROM roles WHERE company_name = %s AND role_name = %s", (company_name, role_name))
+            cursor.execute("DELETE FROM role_permissions WHERE company_name = %s AND role_name = %s", (company_name, role_name))
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_role_permissions(company_name):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("SELECT role_name, folder_name FROM role_permissions WHERE company_name = ?", (company_name,))
+            rows = cursor.fetchall()
+            res = {}
+            for r in rows:
+                role = r["role_name"]
+                if role not in res:
+                    res[role] = []
+                res[role].append(r["folder_name"])
+            return res
+        else:
+            cursor.execute("SELECT role_name, folder_name FROM role_permissions WHERE company_name = %s", (company_name,))
+            rows = cursor.fetchall()
+            res = {}
+            for r in rows:
+                role = r[0]
+                if role not in res:
+                    res[role] = []
+                res[role].append(r[1])
+            return res
+    finally:
+        conn.close()
+
+def update_role_permissions(company_name, role_name, folders_list):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("DELETE FROM role_permissions WHERE company_name = ? AND role_name = ?", (company_name, role_name))
+            for f in folders_list:
+                cursor.execute("INSERT INTO role_permissions (company_name, role_name, folder_name) VALUES (?, ?, ?)", (company_name, role_name, f))
+        else:
+            cursor.execute("DELETE FROM role_permissions WHERE company_name = %s AND role_name = %s", (company_name, role_name))
+            for f in folders_list:
+                cursor.execute("INSERT INTO role_permissions (company_name, role_name, folder_name) VALUES (%s, %s, %s)", (company_name, role_name, f))
+        conn.commit()
+    finally:
+        conn.close()
+

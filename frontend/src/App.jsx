@@ -5,6 +5,7 @@ import GoogleLogin from "./pages/GoogleLogin.jsx";
 import GooglePassword from "./pages/GooglePassword.jsx";
 import RegisterCompany from "./pages/RegisterCompany.jsx";
 import EmployeeSignup from "./pages/EmployeeSignup.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 import "./styles.css";
 
 const API_BASE = "http://127.0.0.1:8000/api";
@@ -455,6 +456,23 @@ function App() {
       return <EmployeeSignup navigate={(r) => window.location.hash = r} />;
     }
     return <MainLogin navigate={(r) => window.location.hash = r} onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("loggedUser");
+    localStorage.removeItem("loginRole");
+    localStorage.removeItem("companyName");
+    setIsAuthenticated(false);
+    setSession({
+      user_id: "",
+      role: "",
+      clearance: "",
+      is_locked: false
+    });
+  };
+
+  if (session.role === "ADMIN" || localStorage.getItem("loginRole") === "ADMIN") {
+    return <AdminDashboard onLogout={handleLogout} />;
   }
 
   return (
