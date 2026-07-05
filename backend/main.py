@@ -75,7 +75,9 @@ class RegisterCompanyRequest(BaseModel):
     email: str
     password: str
     first_name: str
+    middle_name: str
     last_name: str
+    phone: str
     company_name: str
     industry: str
     branch: str
@@ -121,9 +123,9 @@ def register_company(req: RegisterCompanyRequest):
         email=req.email,
         password=req.password,
         first_name=req.first_name,
-        middle_name="",
+        middle_name=req.middle_name,
         last_name=req.last_name,
-        phone="",
+        phone=req.phone,
         company_name=req.company_name,
         branch=req.branch,
         role="ADMIN",
@@ -132,6 +134,18 @@ def register_company(req: RegisterCompanyRequest):
         status="APPROVED"
     )
     
+    from backend.postgres_db import add_role, update_role_permissions
+    for r in ["Standard_Eng", "HR_Manager", "Executive", "Surgeon"]:
+        try:
+            add_role(req.company_name, r)
+        except Exception:
+            pass
+            
+    update_role_permissions(req.company_name, "Standard_Eng", ["Drive", "Wiki"])
+    update_role_permissions(req.company_name, "HR_Manager", ["Drive", "Wiki", "Tickets"])
+    update_role_permissions(req.company_name, "Executive", ["Drive", "Wiki", "Tickets", "Chat"])
+    update_role_permissions(req.company_name, "Surgeon", ["Drive", "Wiki"])
+
     write_audit_log("INFO", "IAM_Gateway", f"Registered new tenant company: {req.company_name} by admin {req.email}")
     return {"status": "success"}
 

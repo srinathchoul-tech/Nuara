@@ -80,35 +80,41 @@ def get_companies_list():
         conn.close()
 
 def create_otp(email, code):
+    import time
     conn, is_sqlite = get_postgres_connection()
     cursor = conn.cursor()
+    now = int(time.time())
     try:
         if is_sqlite:
-            cursor.execute("INSERT OR REPLACE INTO otp_verifications (email, code, verified) VALUES (?, ?, 0)", (email, code))
+            cursor.execute("INSERT OR REPLACE INTO otp_verifications (email, code, verified, created_at) VALUES (?, ?, 0, ?)", (email, code, now))
         else:
-            cursor.execute("INSERT INTO otp_verifications (email, code, verified) VALUES (%s, %s, 0) ON CONFLICT (email) DO UPDATE SET code = EXCLUDED.code, verified = 0", (email, code))
+            cursor.execute("INSERT INTO otp_verifications (email, code, verified, created_at) VALUES (%s, %s, 0, %s) ON CONFLICT (email) DO UPDATE SET code = EXCLUDED.code, verified = 0, created_at = EXCLUDED.created_at", (email, code, now))
         conn.commit()
     finally:
         conn.close()
 
 def check_otp(email, code):
+    import time
     conn, is_sqlite = get_postgres_connection()
     cursor = conn.cursor()
+    now = int(time.time())
     try:
         if is_sqlite:
-            cursor.execute("SELECT code FROM otp_verifications WHERE email = ?", (email,))
+            cursor.execute("SELECT code, created_at FROM otp_verifications WHERE email = ?", (email,))
             row = cursor.fetchone()
             if row and row["code"] == code:
-                cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE email = ?", (email,))
-                conn.commit()
-                return True
+                if now - row["created_at"] < 300:
+                    cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE email = ?", (email,))
+                    conn.commit()
+                    return True
         else:
-            cursor.execute("SELECT code FROM otp_verifications WHERE email = %s", (email,))
+            cursor.execute("SELECT code, created_at FROM otp_verifications WHERE email = %s", (email,))
             row = cursor.fetchone()
             if row and row[0] == code:
-                cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE email = %s", (email,))
-                conn.commit()
-                return True
+                if now - row[1] < 300:
+                    cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE email = %s", (email,))
+                    conn.commit()
+                    return True
         return False
     finally:
         conn.close()

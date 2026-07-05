@@ -42,7 +42,8 @@ def init_db():
     CREATE TABLE otp_verifications (
         email TEXT PRIMARY KEY,
         code TEXT,
-        verified INTEGER
+        verified INTEGER,
+        created_at INTEGER
     )
     """)
 
