@@ -45,6 +45,8 @@ function App() {
   const [theme, setTheme] = useState("dark");
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("loggedUser"));
   const [authRoute, setAuthRoute] = useState(() => window.location.hash.replace("#", "") || "/");
+  const [ingestOutput, setIngestOutput] = useState(null);
+  const [ingestLoading, setIngestLoading] = useState(false);
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -180,14 +182,23 @@ function App() {
   const handleCreateDocument = async (e) => {
     e.preventDefault();
     if (!newDoc.name || !newDoc.content) return;
+    setIngestLoading(true);
+    setIngestOutput(null);
 
     try {
-      const res = await fetch(`${API_BASE}/admin/documents`, {
+      const res = await fetch(`${API_BASE}/admin/ingest-simulate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDoc)
+        body: JSON.stringify({
+          name: newDoc.name,
+          content: newDoc.content,
+          source_type: newDoc.source_type,
+          access_level: newDoc.access_level
+        })
       });
       if (res.ok) {
+        const data = await res.json();
+        setIngestOutput(data);
         setNewDoc({
           name: "",
           content: "",
@@ -200,6 +211,8 @@ function App() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIngestLoading(false);
     }
   };
 
@@ -1055,11 +1068,56 @@ function App() {
                     </div>
                     <button 
                       type="submit"
-                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg btn-glow font-bold"
+                      disabled={ingestLoading}
+                      className="w-full py-2 bg-primary text-on-primary font-label-md uppercase tracking-wider text-xs rounded-lg btn-glow font-bold cursor-pointer"
                     >
-                      Seed to Vector & Graph Stores
+                      {ingestLoading ? "Vectorizing & Ingesting..." : "Seed to Vector & Graph Stores"}
                     </button>
                   </form>
+
+                  {ingestOutput && (
+                    <div className="mt-4 p-3 bg-surface border border-outline rounded-lg space-y-2">
+                      <div className="text-[10px] text-primary uppercase font-bold tracking-wider">Vectorizer Studio Processing</div>
+                      
+                      <div className="space-y-1">
+                        <div className="text-[9px] text-on-surface-variant font-bold uppercase">1. Semantic Chunking</div>
+                        <div className="max-h-24 overflow-y-auto space-y-1 pr-1">
+                          {ingestOutput.chunks.map((chk, idx) => (
+                            <div key={idx} className="bg-surface-variant/40 p-1.5 rounded text-[11px] font-mono-data leading-relaxed text-on-surface">
+                              <span className="text-purple-300 mr-1">[Chunk {idx + 1}]</span>
+                              {chk}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-outline/25 my-1"></div>
+
+                      <div className="flex items-center justify-between text-[11px] gap-4">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[9px] text-on-surface-variant font-bold uppercase block">2. Vector Embeddings (Qdrant)</span>
+                          <span className="font-mono-data text-purple-300 text-[10px] block truncate">
+                            [{ingestOutput.embeddings[0] ? ingestOutput.embeddings[0].join(", ") : "0.0"}]
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] text-on-surface-variant font-bold uppercase block">3. Relational Tags (Neo4j)</span>
+                          <span className="font-mono-data text-purple-300 text-[10px]">
+                            {ingestOutput.entities.join(", ") || "None"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-outline/25 my-1"></div>
+
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-[9px] text-on-surface-variant font-bold uppercase">4. ACL Permissions</span>
+                        <span className="px-1.5 py-0.5 rounded font-mono-data font-bold text-[9px] bg-primary text-on-primary">
+                          {ingestOutput.access_level}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

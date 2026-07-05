@@ -147,6 +147,47 @@ def api_add_document(req: CreateDocRequest):
     write_audit_log("INFO", "AdminConsole", f"Document '{req.name}' successfully added (Level: {req.access_level})")
     return {"status": "success", "doc_id": doc_id}
 
+class IngestSimulateRequest(BaseModel):
+    name: str
+    content: str
+    source_type: str
+    access_level: str
+
+@app.post("/api/admin/ingest-simulate")
+def api_ingest_simulate(req: IngestSimulateRequest):
+    import uuid
+    import random
+    import re
+    
+    doc_id = "doc_" + str(uuid.uuid4())[:8]
+    add_document(doc_id, req.name, req.content, req.source_type, req.access_level, "")
+    
+    paragraphs = [p.strip() for p in req.content.split("\n\n") if p.strip()]
+    if not paragraphs:
+        paragraphs = [req.content.strip()]
+        
+    chunks = []
+    embeddings = []
+    for p in paragraphs:
+        chunks.append(p)
+        coords = [round(random.uniform(-1.0, 1.0), 4) for _ in range(5)]
+        embeddings.append(coords)
+        
+    words = re.findall(r"\b[A-Za-z]{4,}\b", req.content)
+    stop_words = {"this", "that", "with", "from", "your", "they", "have", "were", "been"}
+    filtered_words = [w for w in words if w.lower() not in stop_words]
+    entities = list(set(filtered_words))[:6]
+    
+    write_audit_log("INFO", "VectorizerStudio", f"Simulated ingestion for '{req.name}' complete. Chunks: {len(chunks)}, Entities: {len(entities)}")
+    return {
+        "status": "success",
+        "doc_id": doc_id,
+        "chunks": chunks,
+        "embeddings": embeddings,
+        "entities": entities,
+        "access_level": req.access_level
+    }
+
 @app.put("/api/admin/documents/permissions")
 def api_update_permission(req: UpdatePermRequest):
     update_document_permission(req.doc_id, req.access_level)
