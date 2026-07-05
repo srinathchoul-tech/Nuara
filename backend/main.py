@@ -176,9 +176,51 @@ def employee_signup(req: EmployeeSignupRequest):
 @app.post("/api/auth/send-otp")
 def send_otp(req: SendOtpRequest):
     import random
+    import os
     code = str(random.randint(100000, 999999))
     create_otp(req.email, code)
-    write_audit_log("INFO", "OTPGateway", f"Dispatched simulated {req.type} OTP code: {code} to {req.email}")
+    
+    twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
+    twilio_phone = os.getenv("TWILIO_PHONE_NUMBER")
+    sg_key = os.getenv("SENDGRID_API_KEY")
+    sg_sender = os.getenv("SENDGRID_SENDER_EMAIL")
+    
+    if req.type == "email":
+        if sg_key and sg_sender:
+            try:
+                from sendgrid import SendGridAPIClient
+                from sendgrid.helpers.mail import Mail
+                sg = SendGridAPIClient(sg_key)
+                message = Mail(
+                    from_email=sg_sender,
+                    to_emails=req.email,
+                    subject="Nuara Secure OTP Code",
+                    plain_text_content=f"Your Nuara security code is: {code}. It will expire in 5 minutes."
+                )
+                sg.send(message)
+                write_audit_log("INFO", "OTPGateway", f"Real email OTP code sent to {req.email}")
+            except Exception as e:
+                write_audit_log("ERROR", "OTPGateway", f"Failed to deliver real email to {req.email}: {str(e)}")
+        else:
+            write_audit_log("INFO", "OTPGateway", f"Dispatched simulated email OTP code: {code} to {req.email}")
+            
+    elif req.type == "phone":
+        if twilio_sid and twilio_token and twilio_phone:
+            try:
+                from twilio.rest import Client
+                client = Client(twilio_sid, twilio_token)
+                client.messages.create(
+                    body=f"Nuara Security Code: {code}. Expires in 5 minutes.",
+                    from_=twilio_phone,
+                    to=req.email
+                )
+                write_audit_log("INFO", "OTPGateway", f"Real SMS OTP code sent to {req.email}")
+            except Exception as e:
+                write_audit_log("ERROR", "OTPGateway", f"Failed to deliver real SMS to {req.email}: {str(e)}")
+        else:
+            write_audit_log("INFO", "OTPGateway", f"Dispatched simulated SMS OTP code: {code} to {req.email}")
+            
     return {"status": "success", "code": code}
 
 @app.post("/api/auth/verify-otp")
