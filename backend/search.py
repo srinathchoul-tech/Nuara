@@ -20,14 +20,17 @@ def is_authorized(user_role, doc_access):
     user_clearance = ROLE_CLEARANCE.get(user_role, "PUBLIC")
     return CLEARANCE_HIERARCHY.get(user_clearance, 0) >= CLEARANCE_HIERARCHY.get(doc_access, 0)
 
-def search_rag(query_text, user_id):
-    user = get_user_role(user_id)
+def search_rag(query_text, email):
+    from backend.postgres_db import get_user_by_email
+    user = get_user_by_email(email)
     if not user:
         return {"status": "denied", "reason": "User not found"}
         
-    user_role = user["role"]
-    write_audit_log("INFO", "API Gateway", f"Query request received from {user_id} ({user_role})")
-    write_audit_log("DEBUG", "PermissionFilter", f"Validating permissions for user {user_id}")
+    user_role = user["assigned_role"] if user["role"] == "EMPLOYEE" else user["role"]
+    user_company = user["company_name"]
+    
+    write_audit_log("INFO", "API Gateway", f"Query request received from {email} ({user_role} at {user_company})")
+    write_audit_log("DEBUG", "PermissionFilter", f"Validating permissions for user {email}")
 
     query_terms = set(re.findall(r"\w+", query_text.lower()))
     is_sensitive_query = any(term in ["salary", "salaries", "bonus", "compensation", "hr_salaries", "pool"] for term in query_terms)
@@ -50,8 +53,10 @@ def search_rag(query_text, user_id):
     
     for doc in all_docs:
         if doc["id"] in hit_ids:
-            if is_authorized(user_role, doc["access_level"]):
-                matched_docs.append(doc)
+            doc_comp = doc.get("company_name", "Nuara")
+            if doc_comp == user_company:
+                if is_authorized(user_role, doc["access_level"]):
+                    matched_docs.append(doc)
                 
     write_audit_log("INFO", "Retrieval", f"Retrieval completed. Found {len(matched_docs)} documents.")
     

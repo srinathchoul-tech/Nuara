@@ -12,21 +12,149 @@ def get_postgres_connection():
     except Exception:
         return get_sqlite_conn(), True
 
-def get_user_role(user_id):
+def get_user_role(email):
     conn, is_sqlite = get_postgres_connection()
     cursor = conn.cursor()
     try:
         if is_sqlite:
-            cursor.execute("SELECT role, username, clearance_level FROM users WHERE id = ?", (user_id,))
+            cursor.execute("SELECT role, assigned_role, clearance_level, company_name, first_name || ' ' || last_name as username FROM users WHERE email = ?", (email,))
             row = cursor.fetchone()
             if row:
-                return dict(row)
+                r = dict(row)
+                return {
+                    "role": r["assigned_role"] if r["role"] == "EMPLOYEE" else r["role"],
+                    "username": r["username"],
+                    "clearance_level": r["clearance_level"]
+                }
         else:
-            cursor.execute("SELECT role, username, clearance_level FROM users WHERE id = %s", (user_id,))
+            cursor.execute("SELECT role, assigned_role, clearance_level, company_name, first_name, last_name FROM users WHERE email = %s", (email,))
             row = cursor.fetchone()
             if row:
-                return {"role": row[0], "username": row[1], "clearance_level": row[2]}
+                r_type = row[1] if row[0] == "EMPLOYEE" else row[0]
+                return {"role": r_type, "username": f"{row[4]} {row[5]}", "clearance_level": row[2]}
         return None
+    finally:
+        conn.close()
+
+def get_user_by_email(email):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        else:
+            cursor.execute("SELECT email, password, first_name, middle_name, last_name, phone, company_name, branch, role, assigned_role, clearance_level, status FROM users WHERE email = %s", (email,))
+            row = cursor.fetchone()
+            if row:
+                return {
+                    "email": row[0], "password": row[1], "first_name": row[2], "middle_name": row[3],
+                    "last_name": row[4], "phone": row[5], "company_name": row[6], "branch": row[7],
+                    "role": row[8], "assigned_role": row[9], "clearance_level": row[10], "status": row[11]
+                }
+            return None
+    finally:
+        conn.close()
+
+def add_company(company_id, name, industry, branch):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("INSERT INTO companies VALUES (?, ?, ?, ?)", (company_id, name, industry, branch))
+        else:
+            cursor.execute("INSERT INTO companies VALUES (%s, %s, %s, %s)", (company_id, name, industry, branch))
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_companies_list():
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT name FROM companies")
+        rows = cursor.fetchall()
+        return [row[0] if not is_sqlite else row["name"] for row in rows]
+    finally:
+        conn.close()
+
+def create_otp(email, code):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("INSERT OR REPLACE INTO otp_verifications (email, code, verified) VALUES (?, ?, 0)", (email, code))
+        else:
+            cursor.execute("INSERT INTO otp_verifications (email, code, verified) VALUES (%s, %s, 0) ON CONFLICT (email) DO UPDATE SET code = EXCLUDED.code, verified = 0", (email, code))
+        conn.commit()
+    finally:
+        conn.close()
+
+def check_otp(email, code):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("SELECT code FROM otp_verifications WHERE email = ?", (email,))
+            row = cursor.fetchone()
+            if row and row["code"] == code:
+                cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE email = ?", (email,))
+                conn.commit()
+                return True
+        else:
+            cursor.execute("SELECT code FROM otp_verifications WHERE email = %s", (email,))
+            row = cursor.fetchone()
+            if row and row[0] == code:
+                cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE email = %s", (email,))
+                conn.commit()
+                return True
+        return False
+    finally:
+        conn.close()
+
+def create_user_profile(email, password, first_name, middle_name, last_name, phone, company_name, branch, role, assigned_role, clearance_level, status):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute(
+                "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (email, password, first_name, middle_name, last_name, phone, company_name, branch, role, assigned_role, clearance_level, status)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (email, password, first_name, middle_name, last_name, phone, company_name, branch, role, assigned_role, clearance_level, status)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_pending_members(company_name):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("SELECT email, first_name, middle_name, last_name, phone, branch FROM users WHERE company_name = ? AND status = 'PENDING'", (company_name,))
+            rows = cursor.fetchall()
+            return [dict(r) for r in rows]
+        else:
+            cursor.execute("SELECT email, first_name, middle_name, last_name, phone, branch FROM users WHERE company_name = %s AND status = 'PENDING'", (company_name,))
+            rows = cursor.fetchall()
+            return [{"email": r[0], "first_name": r[1], "middle_name": r[2], "last_name": r[3], "phone": r[4], "branch": r[5]} for r in rows]
+    finally:
+        conn.close()
+
+def approve_member_role(email, assigned_role, clearance_level):
+    conn, is_sqlite = get_postgres_connection()
+    cursor = conn.cursor()
+    try:
+        if is_sqlite:
+            cursor.execute("UPDATE users SET status = 'APPROVED', assigned_role = ?, clearance_level = ? WHERE email = ?", (assigned_role, clearance_level, email))
+        else:
+            cursor.execute("UPDATE users SET status = 'APPROVED', assigned_role = %s, clearance_level = %s WHERE email = %s", (assigned_role, clearance_level, email))
+        conn.commit()
     finally:
         conn.close()
 

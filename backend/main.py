@@ -4,7 +4,12 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 from backend.database import init_db, get_db_connection
-from backend.postgres_db import get_user_role, write_audit_log, read_audit_logs, add_document, update_document_permission, get_all_documents
+from backend.postgres_db import (
+    get_user_role, write_audit_log, read_audit_logs, add_document, 
+    update_document_permission, get_all_documents, get_user_by_email, 
+    add_company, get_companies_list, create_otp, check_otp, 
+    create_user_profile, get_pending_members, approve_member_role
+)
 from backend.search import search_rag
 from backend.agent import simulate_agent_chain
 
@@ -19,9 +24,10 @@ app.add_middleware(
 )
 
 session_state = {
-    "user_id": "Node_02",
+    "user_id": "engineer@nexusbrain.com",
     "role": "Standard_Eng",
     "clearance": "ENG",
+    "company_name": "Nuara",
     "is_locked": False
 }
 
@@ -64,26 +70,173 @@ def switch_role(req: SwitchRoleRequest):
     write_audit_log("INFO", "IAM_Gateway", f"Session switched to {req.user_id} with role {user['role']}")
     return session_state
 
-class LoginRequest(BaseModel):
+class RegisterCompanyRequest(BaseModel):
     email: str
+    password: str
+    first_name: str
+    last_name: str
+    company_name: str
+    industry: str
+    branch: str
+
+class EmployeeSignupRequest(BaseModel):
+    email: str
+    password: str
+    first_name: str
+    middle_name: str
+    last_name: str
+    phone: str
+    company_name: str
+    branch: str
+
+class SendOtpRequest(BaseModel):
+    email: str
+    type: str
+
+class VerifyOtpRequest(BaseModel):
+    email: str
+    code: str
+
+class CompanyLoginRequest(BaseModel):
+    email: str
+    password: str
+    company_name: str
     role: str
 
-@app.post("/api/auth/login")
-def api_login(req: LoginRequest):
-    role_map = {
-        "CEO": ("CEO_Alpha", "Executive", "EXEC"),
-        "HR": ("HR_Lead", "HR_Manager", "HR"),
-        "EMPLOYEE": ("Node_02", "Standard_Eng", "ENG")
-    }
+class ApproveMemberRequest(BaseModel):
+    email: str
+    assigned_role: str
+
+@app.post("/api/auth/register-company")
+def register_company(req: RegisterCompanyRequest):
+    import uuid
+    comp_id = "comp_" + str(uuid.uuid4())[:8]
+    try:
+        add_company(comp_id, req.company_name, req.industry, req.branch)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Company name already registered")
+        
+    create_user_profile(
+        email=req.email,
+        password=req.password,
+        first_name=req.first_name,
+        middle_name="",
+        last_name=req.last_name,
+        phone="",
+        company_name=req.company_name,
+        branch=req.branch,
+        role="ADMIN",
+        assigned_role="",
+        clearance_level="EXEC",
+        status="APPROVED"
+    )
     
-    user_info = role_map.get(req.role, ("Node_02", "Standard_Eng", "ENG"))
-    session_state["user_id"] = user_info[0]
-    session_state["role"] = user_info[1]
-    session_state["clearance"] = user_info[2]
+    write_audit_log("INFO", "IAM_Gateway", f"Registered new tenant company: {req.company_name} by admin {req.email}")
+    return {"status": "success"}
+
+@app.post("/api/auth/employee-signup")
+def employee_signup(req: EmployeeSignupRequest):
+    user = get_user_by_email(req.email)
+    if user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+        
+    create_user_profile(
+        email=req.email,
+        password=req.password,
+        first_name=req.first_name,
+        middle_name=req.middle_name,
+        last_name=req.last_name,
+        phone=req.phone,
+        company_name=req.company_name,
+        branch=req.branch,
+        role="EMPLOYEE",
+        assigned_role="",
+        clearance_level="PUBLIC",
+        status="PENDING"
+    )
+    
+    write_audit_log("INFO", "IAM_Gateway", f"New employee request registered for {req.email} at {req.company_name} (PENDING APPROVAL)")
+    return {"status": "success"}
+
+@app.post("/api/auth/send-otp")
+def send_otp(req: SendOtpRequest):
+    import random
+    code = str(random.randint(100000, 999999))
+    create_otp(req.email, code)
+    write_audit_log("INFO", "OTPGateway", f"Dispatched simulated {req.type} OTP code: {code} to {req.email}")
+    return {"status": "success", "code": code}
+
+@app.post("/api/auth/verify-otp")
+def verify_otp(req: VerifyOtpRequest):
+    success = check_otp(req.email, req.code)
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
+    return {"status": "success"}
+
+@app.post("/api/auth/company-login")
+def company_login(req: CompanyLoginRequest):
+    user = get_user_by_email(req.email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+    if user["password"] != req.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+    if user["company_name"].lower() != req.company_name.lower():
+        raise HTTPException(status_code=401, detail="Credentials mismatch for selected company")
+        
+    if user["role"] != req.role:
+        raise HTTPException(status_code=401, detail="Invalid role selection")
+        
+    if user["status"] != "APPROVED":
+        raise HTTPException(status_code=403, detail="Your account registration is currently pending administrator approval.")
+        
+    session_state["user_id"] = user["email"]
+    session_state["company_name"] = user["company_name"]
     session_state["is_locked"] = False
     
-    write_audit_log("INFO", "IAM_Gateway", f"User {req.email} successfully logged in as {req.role}")
-    return session_state
+    if user["role"] == "ADMIN":
+        session_state["role"] = "ADMIN"
+        session_state["clearance"] = "EXEC"
+    else:
+        role_map = {
+            "Executive": "EXEC",
+            "HR_Manager": "HR",
+            "Standard_Eng": "ENG"
+        }
+        session_state["role"] = user["assigned_role"]
+        session_state["clearance"] = role_map.get(user["assigned_role"], "ENG")
+        
+    write_audit_log("INFO", "IAM_Gateway", f"User {req.email} successfully logged in to {user['company_name']}")
+    return {
+        "status": "success",
+        "session": session_state
+    }
+
+@app.get("/api/admin/pending-members")
+def api_pending_members(company_name: str):
+    return get_pending_members(company_name)
+
+@app.post("/api/admin/approve-member")
+def approve_member(req: ApproveMemberRequest):
+    user = get_user_by_email(req.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="Requester not found")
+        
+    clearance_map = {
+        "Executive": "EXEC",
+        "HR_Manager": "HR",
+        "Standard_Eng": "ENG"
+    }
+    clearance = clearance_map.get(req.assigned_role, "ENG")
+    approve_member_role(req.email, req.assigned_role, clearance)
+    
+    write_audit_log("INFO", "AdminConsole", f"Employee {req.email} approved by admin. Assigned: {req.assigned_role}")
+    return {"status": "success"}
+
+@app.get("/api/companies")
+def get_companies():
+    return get_companies_list()
 
 @app.post("/api/query")
 def execute_query(req: QueryRequest):

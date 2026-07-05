@@ -3,6 +3,8 @@ import MainLogin from "./pages/MainLogin.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import GoogleLogin from "./pages/GoogleLogin.jsx";
 import GooglePassword from "./pages/GooglePassword.jsx";
+import RegisterCompany from "./pages/RegisterCompany.jsx";
+import EmployeeSignup from "./pages/EmployeeSignup.jsx";
 import "./styles.css";
 
 const API_BASE = "http://127.0.0.1:8000/api";
@@ -47,6 +49,8 @@ function App() {
   const [authRoute, setAuthRoute] = useState(() => window.location.hash.replace("#", "") || "/");
   const [ingestOutput, setIngestOutput] = useState(null);
   const [ingestLoading, setIngestLoading] = useState(false);
+  const [pendingMembers, setPendingMembers] = useState([]);
+  const [selectedRoles, setSelectedRoles] = useState({});
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -76,6 +80,36 @@ function App() {
       const res = await fetch(`${API_BASE}/logs`);
       const data = await res.json();
       setLogs(data.reverse());
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchPendingMembers = async () => {
+    const compName = localStorage.getItem("companyName") || "Nuara";
+    try {
+      const res = await fetch(`${API_BASE}/admin/pending-members?company_name=${compName}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPendingMembers(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleApproveMember = async (memberEmail) => {
+    const role = selectedRoles[memberEmail] || "Standard_Eng";
+    try {
+      const res = await fetch(`${API_BASE}/admin/approve-member`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: memberEmail, assigned_role: role })
+      });
+      if (res.ok) {
+        fetchPendingMembers();
+        fetchLogs();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -337,6 +371,7 @@ function App() {
   useEffect(() => {
     if (showSettings) {
       fetchAdminData();
+      fetchPendingMembers();
     }
   }, [showSettings]);
 
@@ -413,11 +448,11 @@ function App() {
     if (authRoute === "/forgot-password") {
       return <ForgotPassword navigate={(r) => window.location.hash = r} />;
     }
-    if (authRoute === "/google-login") {
-      return <GoogleLogin navigate={(r) => window.location.hash = r} />;
+    if (authRoute === "/register-company") {
+      return <RegisterCompany navigate={(r) => window.location.hash = r} />;
     }
-    if (authRoute === "/google-password") {
-      return <GooglePassword onLoginSuccess={handleLoginSuccess} />;
+    if (authRoute === "/employee-signup") {
+      return <EmployeeSignup navigate={(r) => window.location.hash = r} />;
     }
     return <MainLogin navigate={(r) => window.location.hash = r} onLoginSuccess={handleLoginSuccess} />;
   }
@@ -1156,6 +1191,42 @@ function App() {
                     ))}
                   </div>
                 </div>
+
+                {pendingMembers.length > 0 && (
+                  <div className="border-t border-outline pt-4 mt-4">
+                    <h3 className="font-label-md text-primary uppercase mb-2 text-xs font-bold">Pending Requesters</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {pendingMembers.map(member => (
+                        <div key={member.email} className="border border-outline bg-surface-variant/30 p-2.5 rounded-lg flex flex-col gap-1.5 text-xs text-on-surface">
+                          <div>
+                            <div className="font-bold text-[11px] text-white">{member.first_name} {member.middle_name} {member.last_name}</div>
+                            <div className="text-[10px] text-on-surface-variant font-mono-data mt-0.5 truncate">{member.email}</div>
+                            <div className="text-[10px] text-on-surface-variant font-mono-data">{member.phone || "No Phone"}</div>
+                            <div className="text-[10px] text-on-surface-variant font-mono-data">Branch: {member.branch}</div>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              className="bg-surface border border-outline rounded text-[9px] p-1 text-on-surface focus:outline-none flex-1"
+                              value={selectedRoles[member.email] || "Standard_Eng"}
+                              onChange={e => setSelectedRoles({...selectedRoles, [member.email]: e.target.value})}
+                            >
+                              <option value="Standard_Eng">Engineer</option>
+                              <option value="HR_Manager">HR Manager</option>
+                              <option value="Executive">Executive</option>
+                            </select>
+                            <button
+                              onClick={() => handleApproveMember(member.email)}
+                              className="px-2.5 py-1 bg-primary text-on-primary rounded text-[9px] font-bold hover:bg-opacity-90 transition-all cursor-pointer"
+                            >
+                              Approve
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

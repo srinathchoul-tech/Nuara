@@ -17,15 +17,47 @@ def init_db():
     cursor.execute("DROP TABLE IF EXISTS nodes")
     cursor.execute("DROP TABLE IF EXISTS edges")
     cursor.execute("DROP TABLE IF EXISTS audit_logs")
+    cursor.execute("DROP TABLE IF EXISTS users")
+    cursor.execute("DROP TABLE IF EXISTS documents")
+    cursor.execute("DROP TABLE IF EXISTS nodes")
+    cursor.execute("DROP TABLE IF EXISTS edges")
+    cursor.execute("DROP TABLE IF EXISTS audit_logs")
     cursor.execute("DROP TABLE IF EXISTS agent_steps")
     cursor.execute("DROP TABLE IF EXISTS onboarding_chats")
+    cursor.execute("DROP TABLE IF EXISTS companies")
+    cursor.execute("DROP TABLE IF EXISTS otp_verifications")
     
     cursor.execute("""
-    CREATE TABLE users (
+    CREATE TABLE companies (
         id TEXT PRIMARY KEY,
-        username TEXT,
+        name TEXT UNIQUE,
+        industry TEXT,
+        branch TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE otp_verifications (
+        email TEXT PRIMARY KEY,
+        code TEXT,
+        verified INTEGER
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE users (
+        email TEXT PRIMARY KEY,
+        password TEXT,
+        first_name TEXT,
+        middle_name TEXT,
+        last_name TEXT,
+        phone TEXT,
+        company_name TEXT,
+        branch TEXT,
         role TEXT,
-        clearance_level TEXT
+        assigned_role TEXT,
+        clearance_level TEXT,
+        status TEXT
     )
     """)
     
@@ -36,7 +68,8 @@ def init_db():
         content TEXT,
         source_type TEXT,
         access_level TEXT,
-        url TEXT
+        url TEXT,
+        company_name TEXT
     )
     """)
     
@@ -88,18 +121,20 @@ def init_db():
     )
     """)
     
-    cursor.executemany("INSERT INTO users VALUES (?, ?, ?, ?)", [
-        ("Node_02", "Software Engineer", "Standard_Eng", "ENG"),
-        ("ENGR_77X", "Standard_Eng", "Standard_Eng", "ENG"),
-        ("HR_Lead", "HR Manager", "HR_Manager", "HR"),
-        ("CEO_Alpha", "Executive Director", "Executive", "EXEC")
+    cursor.execute("INSERT INTO companies VALUES (?, ?, ?, ?)", ("c1", "Nuara", "AI Tech", "Main Branch"))
+    
+    cursor.executemany("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+        ("engineer@nexusbrain.com", "password123", "Srinath", "", "Choul", "1234567890", "Nuara", "Main Branch", "EMPLOYEE", "Standard_Eng", "ENG", "APPROVED"),
+        ("hr@nexusbrain.com", "password123", "Sarah", "", "Connor", "2345678901", "Nuara", "Main Branch", "EMPLOYEE", "HR_Manager", "HR", "APPROVED"),
+        ("ceo@nexusbrain.com", "password123", "John", "", "Connor", "3456789012", "Nuara", "Main Branch", "EMPLOYEE", "Executive", "EXEC", "APPROVED"),
+        ("admin@nexusbrain.com", "password123", "Admin", "", "User", "9999999999", "Nuara", "Main Branch", "ADMIN", "", "EXEC", "APPROVED")
     ])
     
-    cursor.executemany("INSERT INTO documents VALUES (?, ?, ?, ?, ?, ?)", [
-        ("doc_q3", "Q3_Report.pdf", "The company achieved record growth in Q3. Enterprise knowledge graphs were adopted by 40% of target clients. Transition to hybrid semantic RAG model was successfully completed, reducing latency to under 2 seconds.", "Drive", "PUBLIC", "https://nexus.internal/docs/Q3_Report.pdf"),
-        ("doc_arch", "Architecture_v2.docx", "Nuara core architecture uses hybrid retrieval (BM25 + dense vector embeddings). Rerankers are utilized to improve synthesis. Pre-retrieval IAM filters ensure no unauthorized access to documents. Latency is kept low through caching.", "Drive", "ENG", "https://nexus.internal/docs/Architecture_v2.docx"),
-        ("chat_slack_eng", "slack_#eng_leads", "Node_02: We finished testing the vector DB. RAG latency is 1.8s. CEO_Alpha: Great, verify that the permissions gateway is fully blocking non-authorized users. Standard_Eng: Yes, verified.", "Chat", "ENG", "https://nexus.internal/chat/slack_eng_leads"),
-        ("doc_hr_salary", "HR_Salaries_FY24", "Executive bonus pool: CEO_Alpha - $250k, CTO_Beta - $180k. Software Engineer salaries range from $120k to $190k. Average bonus for L5 engineers is $15k. All database details are restricted to HR and Executive clearance.", "Tickets", "HR", "https://nexus.internal/hr/salary_sheet_fy24")
+    cursor.executemany("INSERT INTO documents VALUES (?, ?, ?, ?, ?, ?, ?)", [
+        ("doc_q3", "Q3_Report.pdf", "The company achieved record growth in Q3. Enterprise knowledge graphs were adopted by 40% of target clients. Transition to hybrid semantic RAG model was successfully completed, reducing latency to under 2 seconds.", "Drive", "PUBLIC", "https://nexus.internal/docs/Q3_Report.pdf", "Nuara"),
+        ("doc_arch", "Architecture_v2.docx", "Nuara core architecture uses hybrid retrieval (BM25 + dense vector embeddings). Rerankers are utilized to improve synthesis. Pre-retrieval IAM filters ensure no unauthorized access to documents. Latency is kept low through caching.", "Drive", "ENG", "https://nexus.internal/docs/Architecture_v2.docx", "Nuara"),
+        ("chat_slack_eng", "slack_#eng_leads", "Node_02: We finished testing the vector DB. RAG latency is 1.8s. CEO_Alpha: Great, verify that the permissions gateway is fully blocking non-authorized users. Standard_Eng: Yes, verified.", "Chat", "ENG", "https://nexus.internal/chat/slack_eng_leads", "Nuara"),
+        ("doc_hr_salary", "HR_Salaries_FY24", "Executive bonus pool: CEO_Alpha - $250k, CTO_Beta - $180k. Software Engineer salaries range from $120k to $190k. Average bonus for L5 engineers is $15k. All database details are restricted to HR and Executive clearance.", "Tickets", "HR", "https://nexus.internal/hr/salary_sheet_fy24", "Nuara")
     ])
     
     cursor.executemany("INSERT INTO nodes VALUES (?, ?, ?)", [
@@ -132,6 +167,6 @@ def init_db():
     
     conn.commit()
     conn.close()
-
+ 
 if __name__ == "__main__":
     init_db()
