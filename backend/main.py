@@ -99,6 +99,7 @@ class EmployeeSignupRequest(BaseModel):
 class SendOtpRequest(BaseModel):
     email: str
     type: str
+    company_name: Optional[str] = ""
 
 class VerifyOtpRequest(BaseModel):
     email: str

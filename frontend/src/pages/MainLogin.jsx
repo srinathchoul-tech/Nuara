@@ -9,10 +9,12 @@ export default function MainLogin({ navigate, onLoginSuccess }) {
   const [role, setRole] = useState("EMPLOYEE");
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setApiError("");
+    setLoading(true);
 
     const nextErrors = {
       email: getEmailError(email),
@@ -26,6 +28,7 @@ export default function MainLogin({ navigate, onLoginSuccess }) {
     setErrors(nextErrors);
 
     if (nextErrors.email || nextErrors.password || nextErrors.companyName) {
+      setLoading(false);
       return;
     }
 
@@ -54,6 +57,8 @@ export default function MainLogin({ navigate, onLoginSuccess }) {
     } catch (err) {
       console.error(err);
       setApiError("Connection failure. Make sure the server is active.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,8 +124,13 @@ export default function MainLogin({ navigate, onLoginSuccess }) {
           />
           {errors.password && <p className="field-error">{errors.password}</p>}
 
-          <button className="login-btn" type="submit" style={{ marginTop: "8px" }}>
-            Login
+          <button 
+            className="login-btn" 
+            type="submit" 
+            style={{ marginTop: "8px" }}
+            disabled={loading}
+          >
+            {loading ? "Authenticating..." : "Login"}
           </button>
         </form>
 

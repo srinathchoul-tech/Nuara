@@ -30,6 +30,11 @@ export default function EmployeeSignup({ navigate }) {
   const [error, setError] = useState("");
   const [signupComplete, setSignupComplete] = useState(false);
 
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneCountdown, setPhoneCountdown] = useState(0);
+
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -47,25 +52,51 @@ export default function EmployeeSignup({ navigate }) {
 
   const sendOtpCode = async (target, type) => {
     setError("");
+    if (type === "email") setEmailLoading(true);
+    else setPhoneLoading(true);
+
     try {
       const res = await fetch("http://127.0.0.1:8000/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: target, type: type })
+        body: JSON.stringify({ email: target, type: type, company_name: companyName })
       });
       if (res.ok) {
         const data = await res.json();
         if (type === "email") {
           setEmailSent(true);
           setSimulatedEmailOtp(data.code);
+          setEmailCountdown(60);
+          const interval = setInterval(() => {
+            setEmailCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         } else {
           setPhoneSent(true);
           setSimulatedPhoneOtp(data.code);
+          setPhoneCountdown(60);
+          const interval = setInterval(() => {
+            setPhoneCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         }
       }
     } catch (err) {
       console.error(err);
       setError("Failed to dispatch verification code.");
+    } finally {
+      if (type === "email") setEmailLoading(false);
+      else setPhoneLoading(false);
     }
   };
 
@@ -227,11 +258,12 @@ export default function EmployeeSignup({ navigate }) {
                     {!emailVerified && (
                       <button
                         type="button"
+                        disabled={emailLoading || emailCountdown > 0}
                         onClick={() => email ? sendOtpCode(email, "email") : setError("Enter email")}
                         className="login-btn"
                         style={{ padding: "8px 12px", fontSize: "11px", width: "auto", minWidth: "90px" }}
                       >
-                        Send Code
+                        {emailLoading ? "Sending..." : emailCountdown > 0 ? `Resend in ${emailCountdown}s` : "Send Code"}
                       </button>
                     )}
                   </div>
@@ -272,11 +304,12 @@ export default function EmployeeSignup({ navigate }) {
                     {!phoneVerified && (
                       <button
                         type="button"
+                        disabled={phoneLoading || phoneCountdown > 0}
                         onClick={() => phone ? sendOtpCode(phone, "phone") : setError("Enter phone")}
                         className="login-btn"
                         style={{ padding: "8px 12px", fontSize: "11px", width: "auto", minWidth: "90px" }}
                       >
-                        Send Code
+                        {phoneLoading ? "Sending..." : phoneCountdown > 0 ? `Resend in ${phoneCountdown}s` : "Send Code"}
                       </button>
                     )}
                   </div>

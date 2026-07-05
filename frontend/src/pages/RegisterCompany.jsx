@@ -28,14 +28,22 @@ export default function RegisterCompany({ navigate }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneCountdown, setPhoneCountdown] = useState(0);
+
   const sendOtpCode = async (target, type) => {
     console.log("sendOtpCode invoked with target:", target, "type:", type);
     setError("");
+    if (type === "email") setEmailLoading(true);
+    else setPhoneLoading(true);
+
     try {
       const res = await fetch("http://127.0.0.1:8000/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: target, type: type })
+        body: JSON.stringify({ email: target, type: type, company_name: companyName })
       });
       console.log("sendOtpCode response status:", res.status);
       if (res.ok) {
@@ -44,9 +52,29 @@ export default function RegisterCompany({ navigate }) {
         if (type === "email") {
           setEmailSent(true);
           setSimulatedEmailOtp(data.code);
+          setEmailCountdown(60);
+          const interval = setInterval(() => {
+            setEmailCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         } else {
           setPhoneSent(true);
           setSimulatedPhoneOtp(data.code);
+          setPhoneCountdown(60);
+          const interval = setInterval(() => {
+            setPhoneCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         }
       } else {
         setError("Error response from server.");
@@ -54,6 +82,9 @@ export default function RegisterCompany({ navigate }) {
     } catch (err) {
       console.error(err);
       setError("Failed to dispatch verification code.");
+    } finally {
+      if (type === "email") setEmailLoading(false);
+      else setPhoneLoading(false);
     }
   };
 
@@ -203,11 +234,12 @@ export default function RegisterCompany({ navigate }) {
                 {!emailVerified && (
                   <button
                     type="button"
+                    disabled={emailLoading || emailCountdown > 0}
                     onClick={() => email ? sendOtpCode(email, "email") : setError("Enter admin email.")}
                     className="login-btn"
                     style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap", width: "auto", minWidth: "90px" }}
                   >
-                    Send OTP
+                    {emailLoading ? "Sending..." : emailCountdown > 0 ? `Resend in ${emailCountdown}s` : "Send OTP"}
                   </button>
                 )}
               </div>
@@ -248,11 +280,12 @@ export default function RegisterCompany({ navigate }) {
                 {!phoneVerified && (
                   <button
                     type="button"
+                    disabled={phoneLoading || phoneCountdown > 0}
                     onClick={() => phone ? sendOtpCode(phone, "phone") : setError("Enter mobile number.")}
                     className="login-btn"
                     style={{ padding: "8px 12px", fontSize: "11px", whiteSpace: "nowrap", width: "auto", minWidth: "90px" }}
                   >
-                    Send SMS OTP
+                    {phoneLoading ? "Sending..." : phoneCountdown > 0 ? `Resend in ${phoneCountdown}s` : "Send SMS OTP"}
                   </button>
                 )}
               </div>
